@@ -1,0 +1,1 @@
+"""Satyam backend app package."""

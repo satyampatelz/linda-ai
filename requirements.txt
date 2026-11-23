@@ -1,0 +1,13 @@
+# Satyam v0.8 — Python dependencies (all free, all pip-installable)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27
+python-dotenv>=1.0
+playwright>=1.48
+kaggle>=1.6
+six>=1.16  # kaggle 2.x imports six but does not declare it
+openpyxl>=3.1
+pyyaml>=6.0
+pillow>=10.0
+google-api-python-client>=2.0  # Gmail API (v0.8, read-only)
+google-auth-oauthlib>=1.0  # Gmail OAuth one-time consent flow (v0.8)

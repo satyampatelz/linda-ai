@@ -1,0 +1,7 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # The app talks to a local/self-hosted server; long lines in API code
+    # and string-heavy UI copy are fine.
+    avoid_print: false

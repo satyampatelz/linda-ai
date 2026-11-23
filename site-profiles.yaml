@@ -1,0 +1,46 @@
+# Site profiles — OPTIONAL notes for the browser agent.
+#
+# Satyam drives websites generically: it opens a page, reads the text and
+# links, and plans clicks from what it actually sees. No hardcoded selectors
+# are needed — and none are shipped here, because selectors change and
+# unverified ones would just break.
+#
+# If a site has a quirk (a login flow, a specific button label, a page the
+# agent should start from), write it here in plain words. The agent reads
+# these notes as hints, not as code. Uncomment and fill in a profile when
+# you need one.
+#
+# Live profiles — the agent reads these notes when a task names the site.
+# (The agent reads this file itself with files_read — no code depends on it.)
+
+internshala:
+  name: "Internshala"
+  base_url: "https://internshala.com"
+  login_url: "https://internshala.com/login"
+  notes: >
+    Login is by email + password, or "Login with Google" (Google sign-in
+    works once the user has signed in to Google once in the agent's
+    browser — the profile stays logged in). After login: internship/job
+    applications live under "My Applications" (student dashboard);
+    messages/chats from employers are in the inbox there. If an OTP
+    comes by EMAIL during login, the agent can read it from Gmail and
+    fill it itself (browser_fill_otp) — only SMS OTPs and CAPTCHAs need
+    the user, in the visible browser.
+
+# Example (commented out):
+#
+# seek_iitm:
+#   name: "IITM BS Portal (Seek)"
+#   base_url: "https://app.onlinedegree.iitm.ac.in"
+#   notes: >
+#     Login is via Google sign-in. After login, courses are listed on the
+#     dashboard. Assignments live under each course's "Assignments" section.
+#     If a CAPTCHA or OTP appears, stop and tell the user — they solve it in
+#     the visible browser, then tell the agent to continue.
+#
+# kaggle:
+#   name: "Kaggle"
+#   base_url: "https://www.kaggle.com"
+#   notes: >
+#     Prefer the kaggle_tool (official API) for competitions, datasets and
+#     submissions. Use the browser only for browsing/reading pages.

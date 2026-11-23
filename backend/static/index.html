@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Satyam — Your Personal AI Agent</title>
+  <meta name="description" content="Satyam — your personal autonomous AI agent. Chat, and it does the work.">
+  <meta name="theme-color" content="#dbeafe">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Satyam">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Shared gradient for the custom icon set (v0.5: all icons are
+       hand-drawn SVG paths — no Material Icons, no icon fonts, no emoji).
+       The same paths ship as files in mobile_app/assets/icons/. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="voiceGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#38bdf8"/>
+        <stop offset="0.52" stop-color="#a78bfa"/>
+        <stop offset="1" stop-color="#fb923c"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <div id="app">
+    <!-- App bar -->
+    <header id="appbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">S</div>
+        <div class="brand-text">
+          <h1>Satyam</h1>
+        </div>
+      </div>
+      <div class="appbar-actions">
+        <span id="statusPill" class="pill pill-off">● offline</span>
+        <button id="healthBtn" class="icon-btn status-btn" title="Status"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.5" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7"/><path d="M6.6 12 H9.1 l1.7-4.3 2.7 8.6 1.7-4.3 h2.2" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Status</span></button>
+        <button id="settingsBtn" class="icon-btn icon-only" title="Settings" aria-label="Settings"><svg class="btn-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M9.36 5.63 A6.9 6.9 0 0 1 10.80 5.20 L10.18 1.66 A10.5 10.5 0 0 1 13.82 1.66 L13.20 5.20 A6.9 6.9 0 0 1 15.96 6.35 L18.02 3.40 A10.5 10.5 0 0 1 20.60 5.98 L17.65 8.04 A6.9 6.9 0 0 1 18.80 10.80 L22.34 10.18 A10.5 10.5 0 0 1 22.34 13.82 L18.80 13.20 A6.9 6.9 0 0 1 17.65 15.96 L20.60 18.02 A10.5 10.5 0 0 1 18.02 20.60 L15.96 17.65 A6.9 6.9 0 0 1 13.20 18.80 L13.82 22.34 A10.5 10.5 0 0 1 10.18 22.34 L10.80 18.80 A6.9 6.9 0 0 1 8.04 17.65 L5.98 20.60 A10.5 10.5 0 0 1 3.40 18.02 L6.35 15.96 A6.9 6.9 0 0 1 5.20 13.20 L1.66 13.82 A10.5 10.5 0 0 1 1.66 10.18 L5.20 10.80 A6.9 6.9 0 0 1 6.35 8.04 L3.40 5.98 A10.5 10.5 0 0 1 5.98 3.40 L8.04 6.35 Z M9.3 12 A2.7 2.7 0 1 0 14.7 12 A2.7 2.7 0 1 0 9.3 12 Z" fill="url(#voiceGrad)" fill-rule="evenodd"/></svg></button>
+        <button id="stepsBtn" class="icon-btn" title="Live steps">Steps</button>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Chat column -->
+      <section id="chatCol">
+        <div id="messages">
+          <div class="msg agent">
+            <div class="bubble bubble-welcome">
+              <p>Hey! I'm <b>Satyam</b> — your personal AI agent. Just tell me what you need, and I'll get it done.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approval card (ask mode only; hidden in auto mode) -->
+        <div id="approvalCard" class="approval hidden">
+          <div class="approval-title">Approval needed</div>
+          <div id="approvalDetail" class="approval-detail"></div>
+          <div class="approval-btns">
+            <button id="approveYes" class="btn btn-yes">Approve</button>
+            <button id="approveNo" class="btn btn-no">Reject</button>
+          </div>
+        </div>
+
+        <!-- Composer pinned at bottom (no suggestion chips — v0.5) -->
+        <div id="listenHint" class="listen-hint hidden"><svg class="voice-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.18 6.54 A8.6 7 -18 0 1 3.82 11.86 A8.6 7 -18 0 1 20.18 6.54" fill="none" stroke="url(#voiceGrad)" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13.4 L12 16.2" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round"/><path d="M8.6 19.4 Q12 17.7 15.4 19.4" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round"/><rect x="8.6" y="2.4" width="6.8" height="11" rx="3.4" fill="url(#voiceGrad)"/><path d="M10.1 5.6 H13.9 M10.1 8.6 H13.9" fill="none" stroke="#fff" stroke-width="1.05" opacity=".9" stroke-linecap="round"/><circle cx="18.5" cy="4" r="1.5" fill="url(#voiceGrad)"/></svg><span>Listening… speak — tap the mic again to stop</span></div>
+        <form id="composer">
+          <textarea id="input" rows="1" placeholder="Tell Satyam what to do…" autocomplete="off"></textarea>
+          <button id="micBtn" type="button" title="Speak to type" aria-label="Voice input"><svg class="voice-icon" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M20.18 6.54 A8.6 7 -18 0 1 3.82 11.86 A8.6 7 -18 0 1 20.18 6.54" fill="none" stroke="url(#voiceGrad)" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13.4 L12 16.2" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round"/><path d="M8.6 19.4 Q12 17.7 15.4 19.4" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round"/><rect x="8.6" y="2.4" width="6.8" height="11" rx="3.4" fill="url(#voiceGrad)"/><path d="M10.1 5.6 H13.9 M10.1 8.6 H13.9" fill="none" stroke="#fff" stroke-width="1.05" opacity=".9" stroke-linecap="round"/><circle cx="18.5" cy="4" r="1.5" fill="url(#voiceGrad)"/></svg></button>
+          <button id="stopBtn" type="button" class="hidden" title="Stop task" aria-label="Stop task"><svg class="voice-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="7.2" y="7.2" width="9.6" height="9.6" rx="2.6" fill="#fff"/></svg></button>
+          <button id="sendBtn" type="submit" aria-label="Send"><svg class="voice-icon" viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M3 11.5 L20.6 3.4 c.8-.3 1.6.5 1.2 1.3 L14.4 20.3 c-.3.7-1.3.8 -1.7.1 L10 14.6 5.3 18.5 c-.6.5-1.5 0-1.4-.8 l.8-5.3 c.1-.5-.2-.8-.7-.9 z" fill="#fff"/><path d="M19.6 5.8 L10.6 14.1" fill="none" stroke="#7C6CF0" stroke-width="1.1" opacity=".35" stroke-linecap="round"/></svg></button>
+        </form>
+      </section>
+
+      <!-- Live steps panel (side panel on desktop, bottom sheet on phone) -->
+      <aside id="stepsCol">
+        <div class="steps-header">
+          <h2>Live steps</h2>
+          <button id="stepsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
+        </div>
+        <div id="steps">
+          <p class="steps-empty">Your agent's steps will appear here live.</p>
+        </div>
+      </aside>
+      <div id="sheetBackdrop" class="hidden"></div>
+    </main>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="settingsTitle"><svg class="title-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M9.36 5.63 A6.9 6.9 0 0 1 10.80 5.20 L10.18 1.66 A10.5 10.5 0 0 1 13.82 1.66 L13.20 5.20 A6.9 6.9 0 0 1 15.96 6.35 L18.02 3.40 A10.5 10.5 0 0 1 20.60 5.98 L17.65 8.04 A6.9 6.9 0 0 1 18.80 10.80 L22.34 10.18 A10.5 10.5 0 0 1 22.34 13.82 L18.80 13.20 A6.9 6.9 0 0 1 17.65 15.96 L20.60 18.02 A10.5 10.5 0 0 1 18.02 20.60 L15.96 17.65 A6.9 6.9 0 0 1 13.20 18.80 L13.82 22.34 A10.5 10.5 0 0 1 10.18 22.34 L10.80 18.80 A6.9 6.9 0 0 1 8.04 17.65 L5.98 20.60 A10.5 10.5 0 0 1 3.40 18.02 L6.35 15.96 A6.9 6.9 0 0 1 5.20 13.20 L1.66 13.82 A10.5 10.5 0 0 1 1.66 10.18 L5.20 10.80 A6.9 6.9 0 0 1 6.35 8.04 L3.40 5.98 A10.5 10.5 0 0 1 5.98 3.40 L8.04 6.35 Z M9.3 12 A2.7 2.7 0 1 0 14.7 12 A2.7 2.7 0 1 0 9.3 12 Z" fill="url(#voiceGrad)" fill-rule="evenodd"/></svg><span>Settings</span></h2>
+        <button id="settingsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-note">Sab kuch yahin se badlo — koi file edit karne ki zaroorat nahi. Save karte hi bina restart ke lagu ho jayega.</p>
+
+        <label class="field">
+          <span class="field-label">Brain — kaunsa model jawab dega?</span>
+          <select id="setProvider">
+            <option value="ollama">Ollama — laptop ka local model (free, private)</option>
+            <option value="gemini">Gemini — Google free-tier API (zyada smart)</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Ollama model ka naam</span>
+          <input id="setOllamaModel" type="text" placeholder="qwen2.5:3b" autocomplete="off">
+          <span class="field-hint">Model pehle download hona chahiye: <code>ollama pull qwen2.5:3b</code></span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Gemini API key <span class="field-optional">(sirf Gemini brain ke liye)</span></span>
+          <input id="setGeminiKey" type="password" placeholder="Abhi key set nahi hai" autocomplete="off">
+          <span class="field-hint">Free key: <b>aistudio.google.com</b> → Get API key (card nahi lagta). Khaali chhodo toh purani key hi rahegi.</span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Gemini model ka naam</span>
+          <input id="setGeminiModel" type="text" placeholder="gemini-2.5-flash" autocomplete="off">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Approval mode</span>
+          <select id="setApproval">
+            <option value="auto">Auto — jo bolo wo seedha karega (default)</option>
+            <option value="ask">Ask — push/submit se pehle ek click me poochhega</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Browser</span>
+          <select id="setBrowser">
+            <option value="visible">Visible — Chrome screen pe dikhega (demo ke liye best)</option>
+            <option value="headless">Headless — background me chalega</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Max steps per task (1–50)</span>
+          <input id="setMaxSteps" type="number" min="1" max="50" step="1" value="15">
+          <span class="field-hint">Ek task me agent zyada se zyada kitne steps le sakta hai.</span>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Server API token <span class="field-optional">(sirf cloud server ke liye)</span></span>
+          <input id="setApiToken" type="password" placeholder="Laptop server pe zaroorat nahi" autocomplete="off">
+          <span class="field-hint">Ye token sirf is browser me save hota hai — server ko settings ke saath nahi bheja jata. Cloud server ke .env me jo API_TOKEN set hai, wahi daalo.</span>
+        </label>
+
+        <label class="field field-check">
+          <span class="field-label">Voice — jawab sunai de?</span>
+          <span class="check-row">
+            <input id="setAutoSpeak" type="checkbox">
+            <span class="field-hint">Auto-speak: har agent reply apne aap bol ke sunayega. Band ho toh bhi har agent message ke speaker button se kabhi bhi sun sakte ho. Ye setting sirf is browser me save hoti hai.</span>
+          </span>
+        </label>
+
+        <div id="settingsMsg" class="form-msg hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="settingsSave" class="btn btn-yes">Save settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status / health modal -->
+  <div id="healthModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="healthTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="healthTitle">Status — sab theek hai?</h2>
+        <button id="healthClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div id="healthList">
+          <p class="steps-empty">Check ho raha hai…</p>
+        </div>
+        <div id="healthMsg" class="form-msg hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="healthRefresh" class="btn btn-yes">Dobara check karo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

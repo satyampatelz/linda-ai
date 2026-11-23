@@ -1,0 +1,14 @@
+# Caddy reverse proxy for Satyam — automatic HTTPS, no manual certs.
+#
+# DOMAIN comes from deploy/.env (see .env.example):
+#   DOMAIN=123.45.67.89.nip.io   -> free HTTPS for your VM's public IP
+#                                  (nip.io turns an IP into a real DNS
+#                                  name, so Let's Encrypt works)
+#   DOMAIN=mydomain.com          -> HTTPS on your own domain
+#                                  (point its DNS A record at the VM IP)
+#   DOMAIN=:80                   -> plain HTTP only, no HTTPS
+#                                  (fallback; the Flutter app still works,
+#                                  but the connection is not encrypted)
+{$DOMAIN} {
+	reverse_proxy satyam:8000
+}

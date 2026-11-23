@@ -1,0 +1,5 @@
+# Satyam server URL — launcher (Satyam.bat) isi ko kholta hai.
+# Laptop (default): http://127.0.0.1:8000
+# Cloud (Oracle VM): yahan apne VM ka URL likho, jaise https://satyam.example.com
+# Sirf ek line (neeche wali) badlo — # wali lines comment hain, ignore hoti hain.
+http://127.0.0.1:8000

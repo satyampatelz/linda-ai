@@ -1,0 +1,37 @@
+# Secrets & credentials — NEVER commit these
+.env
+kaggle.json
+access_token
+client_secret.json
+token.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Satyam runtime data
+data/
+workspace/
+*.db
+*.log
+
+# Flutter app (mobile_app/)
+mobile_app/.dart_tool/
+mobile_app/.idea/
+mobile_app/build/
+mobile_app/android/.gradle/
+mobile_app/android/app/debug/
+mobile_app/android/app/profile/
+mobile_app/android/app/release/
+mobile_app/android/local.properties
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/.packages
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
