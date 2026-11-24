@@ -1,4 +1,4 @@
-"""Satyam launcher — starts the server using HOST/PORT from .env.
+"""Linda launcher — starts the server using HOST/PORT from .env.
 
 Usage (venv active, from the project root):
     python run.py
@@ -29,7 +29,7 @@ def _ollama_running() -> bool:
 
 
 if __name__ == "__main__":
-    print("Satyam chal raha hai.")
+    print("Linda chal raha hai.")
     print(f"  Laptop: http://127.0.0.1:{settings.port}")
     if settings.host == "0.0.0.0":
         print(f"  Phone (same Wi-Fi): http://<laptop-LAN-IP>:{settings.port}")

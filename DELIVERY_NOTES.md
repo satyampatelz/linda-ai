@@ -1,10 +1,47 @@
-# Delivery Notes — Satyam v0.9.1
+# Delivery Notes — Linda v0.10.0
 
-Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.9.1.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+Built 24 Nov 2026. Source: `~/workspace/satyam-ai/` (build workspace directory kept as-is). Zip: `linda-ai-v0.10.zip` (top-level folder `linda-ai/`). APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+
+## What's new in v0.10.0 (FULL REBRAND — Satyam is now Linda)
+
+The user asked to rename the agent from "Satyam" to "Linda" and picked the **full rebrand**. Branding + version ONLY — all v0.9.1 functionality is untouched.
+
+1. **New 3D "L" icon** — teal gemstone letter L with ornate gold filigree engravings and diamond-cut facets, layered translucent glass panels behind it, floating gold cubes/pyramids/spheres and sparkling gems around it, and the word "Linda" in small elegant gold serif letters below the L (a real 3D render, same teal-glass + gold style as the old S; the user picked this "filigree" design over the wireframe-cage option and asked for the name written in small letters). Applied everywhere from the master `design/icon-final-3d-linda.png` (512x512, rounded corners r=114, converted from the 1600px v5 webp source with PIL): PWA icons (`backend/static/icons/icon-180/192/512.png`), Android launcher icons (all 5 mipmap densities), Flutter asset `mobile_app/assets/icon.png` (512px), desktop `linda.ico` (7 sizes, 16–256px). The 512px master and the .ico's 256px frame were both visually checked — the L is well-formed, "Linda" is spelled correctly, the filigree and floating shapes survive, and the rounded corners cut nothing.
+2. **Name change everywhere user-visible** — app display name, PWA manifest (`name`/`short_name`), welcome message ("Hey! I'm Linda — your personal AI agent…"), composer placeholder ("Tell Linda what to do…"), system prompt identity ("You are Linda"), auto-reply persona ("You are Linda, replying…"), FastAPI title, Flutter app title/labels, README + all guides, script echo messages, logger names (`linda.*`), env vars (`LINDA_ENV_FILE`, `LINDA_SERVER_URL`), Docker service/container/volume/network names, localStorage keys (`linda_api_token`, `linda_auto_speak`).
+3. **File renames** — `desktop/Satyam.bat` → `desktop/Linda.bat`, `desktop/satyam.ico` → `desktop/linda.ico`, `deploy/satyam.service` → `deploy/linda.service`, Android package `com.satyam.agent` → `com.linda.agent` (kotlin dir + `MainActivity` package + `build.gradle.kts` namespace/applicationId + manifest label), `mobile_app` package name `satyam` → `linda`. Desktop shortcut is now "Linda" (`Linda.lnk`). All references updated (scripts, guides, README, deploy.sh, smoke tests).
+4. **Deliberately NOT renamed** — the author's name "Satyam Patel" (license/personal lines, demo git config, test fixtures), the GitHub username "satyampatelz", the local build workspace directory `~/workspace/satyam-ai/`, and the internal SQLite file `data/satyam.db` (kept so existing chat history keeps working on upgrade — it is git-ignored, invisible, and not in the zip). `design/` mockups/screenshots from the Satyam era are unshipped history and were left alone, except the `media-generation-satyam-design-*` files, renamed to `linda-design-*` so the old DELIVERY_NOTES references stay valid.
+5. **Versions** — 0.10.0 everywhere (config, `backend/__init__.py`, pubspec 0.10.0+12); service-worker cache bumped to v16 (`linda-shell-v16`). Upgrade: extract the new zip, copy the old `data/` and `workspace/` folders over, run `setup.bat` / `run.bat`; rebuild the APK from `mobile_app/README.md`. One rebrand side effect: the PWA's saved API token / auto-speak setting live under new localStorage keys, so cloud users re-enter the token once in Settings.
+
+## What was tested HERE for v0.10.0 (in the build VM, Python 3.12.3)
+
+| Test | Result |
+|---|---|
+| `python -m compileall` (backend, run.py, tests) | ✅ PASS |
+| `node --check backend/static/app.js` | ✅ PASS |
+| Smoke tests (`tests/smoke_test.py`, venv `~/.venvs/satyam`) | ✅ **45/45 passed, 0 failed, 0 skipped** |
+| `flutter pub get` + `flutter analyze` | ✅ **"No issues found!"** |
+| Live server boot + `/health` | ✅ PASS — `{"app":"Linda","version":"0.10.0",...}`; `/health/detailed` works (Ollama fail expected — Ollama isn't running in the VM); server stopped afterwards, port closed |
+| Served UI spot-check (`/`, `/app.js`, `/manifest.json`, `/sw.js`) | ✅ PASS — "Linda" throughout (welcome, placeholder, manifest name/short_name, `linda-shell-v16`); **zero** "Satyam" in served `index.html`/`app.js` |
+| Icon verification (PIL) — every generated icon at the right size; `.ico` parses with all 7 sizes; 512 master + .ico 256px frame visually checked | ✅ PASS |
+| Final grep for "Satyam"/"satyam" | ✅ Only the deliberate leftovers listed above (author, username, `satyam.db`, workspace dir, unshipped `design/` history, generated `.dart_tool`) |
+| Credential scan of zip | ✅ none |
+
+## Caveats
+
+- **No APK built** — same VM sandbox Gradle block as v0.3–v0.9.1 (not attempted). Flutter source is analyze-clean; the user rebuilds on his laptop per `mobile_app/README.md`.
+- **No live Google calls or live sites** — all flows verified locally only.
+- The `.bat`/`.ps1` launcher files are renamed but their Windows behavior is unchanged — still untested on real Windows (same as v0.9).
+- The GitHub repo rename (`satyam-ai` → `linda-ai`) and push are NOT part of this build — handled separately.
+
+---
+
+# Delivery Notes — Linda v0.9.1
+
+Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.9.1.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
 
 ## What's new in v0.9.1 (3D app icon — icon-swap release)
 
-Icon-swap release: ONLY the icon artwork + version changed; all v0.9.0 functionality (desktop launcher, chat history, cloud URL support) is untouched. The user rejected the v0.9.0 "Double Orbit" look along with the A5/A6/A7 variants ("bahut ghatiya lag raha" — he wants better overall colour graphics, everything in 3D), then picked the FINAL icon: a **3D teal-glass S with gold rings** (glossy deep-teal glass letter S, thin metallic gold orbiting rings, soft light-blue background — a real 3D render). Applied everywhere from the master `design/icon-final-3d.png` (512x512, rounded corners r=114, converted from the 1600px webp source with PIL): PWA icons (`backend/static/icons/icon-180/192/512.png`), Android launcher icons (all 5 mipmap densities), desktop `satyam.ico` (7 sizes, 16–256px). The 512px master and the .ico's 256px frame were both visually checked — the S is well-formed, the gold rings survive, and the rounded corners cut nothing important (the corners are plain background). Versions: 0.9.1 everywhere (config, `backend/__init__.py`, pubspec 0.9.1+11); service-worker cache bumped to v15.
+Icon-swap release: ONLY the icon artwork + version changed; all v0.9.0 functionality (desktop launcher, chat history, cloud URL support) is untouched. The user rejected the v0.9.0 "Double Orbit" look along with the A5/A6/A7 variants ("bahut ghatiya lag raha" — he wants better overall colour graphics, everything in 3D), then picked the FINAL icon: a **3D teal-glass S with gold rings** (glossy deep-teal glass letter S, thin metallic gold orbiting rings, soft light-blue background — a real 3D render). Applied everywhere from the master `design/icon-final-3d.png` (512x512, rounded corners r=114, converted from the 1600px webp source with PIL): PWA icons (`backend/static/icons/icon-180/192/512.png`), Android launcher icons (all 5 mipmap densities), desktop `linda.ico` (7 sizes, 16–256px). The 512px master and the .ico's 256px frame were both visually checked — the S is well-formed, the gold rings survive, and the rounded corners cut nothing important (the corners are plain background). Versions: 0.9.1 everywhere (config, `backend/__init__.py`, pubspec 0.9.1+11); service-worker cache bumped to v15.
 
 ## What was tested HERE for v0.9.1 (in the build VM, Python 3.12.3)
 
@@ -23,7 +60,7 @@ Icon-swap release: ONLY the icon artwork + version changed; all v0.9.0 functiona
 
 The user asked for the laptop experience to feel like a real app: "ek baar laptop ke screen par kaise bhi karke la le, click kare toh same apna chat sab khule" — a desktop icon, one click, his same chat opens. He also confirmed he wants it to keep working with the laptop OFF via the Oracle cloud VM, so the launcher supports a cloud server URL too. (Discussed first, built only after his go-ahead — "Hh bhai kro", debit card confirmed for Oracle signup.)
 
-1. **Desktop icon + launcher** (`desktop/`): `create-shortcut.bat` (double-click once) runs `create-shortcut.ps1`, which creates a Desktop shortcut named "Satyam" with the new **Double Orbit logo** as its icon (`satyam.ico`, 7 sizes 16–256px, generated from `design/icon-opt-a4-double.png` with PIL). The shortcut runs `desktop/Satyam.bat`: it reads the server URL from `desktop/server.txt` (or `SATYAM_SERVER_URL`), and for a LOCAL URL (127.0.0.1/localhost) checks `/health` (curl, PowerShell fallback) — if the server is down it starts it in its own minimized window (`.venv\Scripts\python.exe run.py`) and waits up to ~60s for `/health`. Then it opens the chat in a standalone app-mode browser window (Chrome `--app=`, Edge fallback, default browser last resort). No console window is left hanging. `-AutoStart` flag (via `create-shortcut.bat -AutoStart`) also drops the shortcut in the Windows Startup folder, so the server starts with Windows.
+1. **Desktop icon + launcher** (`desktop/`): `create-shortcut.bat` (double-click once) runs `create-shortcut.ps1`, which creates a Desktop shortcut named "Linda" with the new **Double Orbit logo** as its icon (`linda.ico`, 7 sizes 16–256px, generated from `design/icon-opt-a4-double.png` with PIL). The shortcut runs `desktop/Linda.bat`: it reads the server URL from `desktop/server.txt` (or `LINDA_SERVER_URL`), and for a LOCAL URL (127.0.0.1/localhost) checks `/health` (curl, PowerShell fallback) — if the server is down it starts it in its own minimized window (`.venv\Scripts\python.exe run.py`) and waits up to ~60s for `/health`. Then it opens the chat in a standalone app-mode browser window (Chrome `--app=`, Edge fallback, default browser last resort). No console window is left hanging. `-AutoStart` flag (via `create-shortcut.bat -AutoStart`) also drops the shortcut in the Windows Startup folder, so the server starts with Windows.
 2. **New app icon everywhere** (user picked "Double Orbit" as the FINAL icon — cool sky-to-teal-to-mint gradient, white S, double crossing orbit rings, no dot): the PWA icons (`backend/static/icons/icon-180/192/512.png`), the Android launcher icons (all 5 mipmap densities), and the desktop `.ico` are all generated from `design/icon-opt-a4-double.png`. The in-app header logos are drawn in code (CSS/Dart), not image files, so there was nothing else to replace. (History: the first "Orbit S" option was applied, then rejected by the user — he said it looks copied from Instagram — and fully reverted before this final pick.)
 3. **Cloud URL support**: put the Oracle VM URL in `desktop/server.txt` and the launcher skips starting anything local — it just opens the cloud server. Laptop off → work still runs on the VM; the user checks results later from his phone. Guide: `desktop/DESKTOP_GUIDE.md` (Hinglish + English: one-time setup, daily use, cloud URL, auto-start, troubleshooting).
 4. **Chat history persists** (backend SQLite `messages` table in `data/satyam.db`): every user message (saved in `POST /chat`) + every agent final reply (saved in `TaskStore.finish`/`stop` — the exact text the bubble shows, errors as "Error: ...") is stored, capped at the newest 200 with automatic pruning. `GET /chat/history` serves the transcript oldest-first; it is API-token protected like the other `/chat` routes. The PWA (`loadChatHistory`) and the Flutter app (`getChatHistory`) both load it on start and render it below the welcome bubble — the welcome always stays on top. Restored agent replies get working speaker buttons; error replies keep their red bubble.
@@ -47,18 +84,18 @@ The user asked for the laptop experience to feel like a real app: "ek baar lapto
 
 ---
 
-# Delivery Notes — Satyam v0.8.3
+# Delivery Notes — Linda v0.8.3
 
-Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.8.3.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.8.3.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
 
 ## What's new in v0.8.3 (clean chat screen)
 
 Small cleanup release — the user said the chat screen had too much useless text ("chat me bahut faltu ka kuchh likha hua tha"). Now only the welcome message is there — the chat looks completely fresh and clean, in BOTH the PWA and the Flutter app.
 
-1. **Welcome bubble is the greeting ONLY** (PWA `backend/static/index.html` + Flutter `mobile_app/lib/screens/chat_screen.dart`): "Hey! I'm Satyam — your personal AI agent. Just tell me what you need, and I'll get it done." The capabilities paragraph ("writing code, pushing to GitHub, researching the web and making Excel sheets, Kaggle work — anything") and the first-time hints paragraph ("First time here? Tap Status above…") are both gone.
-2. **Composer placeholder is English now**: "Tell Satyam what to do…" (was "Satyam ko koi kaam bolo…") — PWA + Flutter, including the listening-state placeholder ("Listening…").
+1. **Welcome bubble is the greeting ONLY** (PWA `backend/static/index.html` + Flutter `mobile_app/lib/screens/chat_screen.dart`): "Hey! I'm Linda — your personal AI agent. Just tell me what you need, and I'll get it done." The capabilities paragraph ("writing code, pushing to GitHub, researching the web and making Excel sheets, Kaggle work — anything") and the first-time hints paragraph ("First time here? Tap Status above…") are both gone.
+2. **Composer placeholder is English now**: "Tell Linda what to do…" (was "Linda ko koi kaam bolo…") — PWA + Flutter, including the listening-state placeholder ("Listening…").
 3. **All chat-visible toasts/hints are short clean English**: voice toasts (browser support, mic permission, start failures), the listening pill ("Listening… speak — tap the mic again to stop"), the steps empty state ("Your agent's steps will appear here live."), the working bubble ("Working…"), task fallbacks ("Done." / "Task stopped." / "something went wrong."), the stop toast, the approval card title ("Approval needed"), the secure credential box (note, field hints, button, errors), and the Flutter voice/API error strings. The Settings/Status modals keep their Hinglish fix hints — those are separate screens, not the chat.
-4. **Header cleanup**: the model subtitle under the "Satyam" title (the "Ollama (qwen2.5:3b) • auto mode" line) is gone — PWA `#statusLine` element + JS wiring removed, Flutter `_statusLine` removed from the AppBar. The brain info still lives in the Status panel; the online/offline pill stays. Dead `.brand-text p` CSS rules removed too.
+4. **Header cleanup**: the model subtitle under the "Linda" title (the "Ollama (qwen2.5:3b) • auto mode" line) is gone — PWA `#statusLine` element + JS wiring removed, Flutter `_statusLine` removed from the AppBar. The brain info still lives in the Status panel; the online/offline pill stays. Dead `.brand-text p` CSS rules removed too.
 5. **Versions:** 0.8.3 everywhere (config, `backend/__init__.py`, pubspec 0.8.3+9); service-worker cache bumped to v13.
 
 ## What was tested HERE for v0.8.3 (in the build VM, Python 3.12.3)
@@ -77,15 +114,15 @@ Small cleanup release — the user said the chat screen had too much useless tex
 
 ---
 
-# Delivery Notes — Satyam v0.8.2
+# Delivery Notes — Linda v0.8.2
 
-Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.8.2.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.8.2.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
 
 ## What's new in v0.8.2 (English welcome + composer snap-back)
 
 Small fix release — two things the user asked for after watching the demo video.
 
-1. **Welcome message is English now** (PWA `backend/static/index.html` + Flutter `mobile_app/lib/screens/chat_screen.dart`): "Hey! I'm Satyam — your personal AI agent. Just tell me what you need, and I'll get it done…" — the app no longer greets a first-time user with a fixed Hinglish greeting. The standing language rule is unchanged: default English, and the brain auto-adapts to whatever language/script the user chats in. The system prompt line was strengthened to say so explicitly — "from their very first message, no matter what language they start in". No language setting or picker was added anywhere (the user rejected that idea in v0.2.1).
+1. **Welcome message is English now** (PWA `backend/static/index.html` + Flutter `mobile_app/lib/screens/chat_screen.dart`): "Hey! I'm Linda — your personal AI agent. Just tell me what you need, and I'll get it done…" — the app no longer greets a first-time user with a fixed Hinglish greeting. The standing language rule is unchanged: default English, and the brain auto-adapts to whatever language/script the user chats in. The system prompt line was strengthened to say so explicitly — "from their very first message, no matter what language they start in". No language setting or picker was added anywhere (the user rejected that idea in v0.2.1).
 2. **Composer snaps back to one line on send** (PWA `backend/static/app.js`): the grow logic is now one shared `autosizeComposer()` function (used by the input listener), and the submit handler drops the inline height entirely (`removeProperty("height")`) after clearing — so no stale two-line height can survive the programmatic clear. Verified live in Chromium: type two lines → send (button and Enter key) → composer is single-line height within 50ms. The Flutter composer (`TextField`, minLines 1 / maxLines 4 + `controller.clear()`) was checked and needs no fix — Flutter sizes the field to its content, so clearing shrinks it on the next frame automatically.
 3. **Versions:** 0.8.2 everywhere (config, `backend/__init__.py`, pubspec 0.8.2+8); service-worker cache bumped to v12.
 
@@ -105,9 +142,9 @@ Small fix release — two things the user asked for after watching the demo vide
 
 ---
 
-# Delivery Notes — Satyam v0.8.1
+# Delivery Notes — Linda v0.8.1
 
-Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.8.1.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.8.1.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
 
 ## What's new in v0.8.1 (SMS OTP ask-and-fill)
 
@@ -133,13 +170,13 @@ The user corrected the v0.8 behavior: when a site asks for an **SMS** OTP, the a
 
 ---
 
-# Delivery Notes — Satyam v0.8.0
+# Delivery Notes — Linda v0.8.0
 
-Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.8.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
+Built 23 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.8.zip`. APK: **NOT built in this VM — Flutter source only** (same sandbox Gradle block as v0.3; see the v0.3 section below).
 
 ## What's new in v0.8.0 (Gmail + email OTP auto-fill + Google auto sign-in + form filling)
 
-The user wants Satyam to "do everything": read his Gmail, open sites like Internshala and check them, fill any form, auto sign-in with Google, and read OTPs from Gmail and fill them automatically. All of it is in this release — official APIs only, no unofficial libraries, no login automation that fakes a human.
+The user wants Linda to "do everything": read his Gmail, open sites like Internshala and check them, fill any form, auto sign-in with Google, and read OTPs from Gmail and fill them automatically. All of it is in this release — official APIs only, no unofficial libraries, no login automation that fakes a human.
 
 1. **New module `backend/app/gmail/`** — `client.py` (OAuth 2.0, **read-only** scope `gmail.readonly` — the agent can never send/delete/modify mail; token in `data/token.json`, auto-refresh; `client_secret.json` at project root or in `data/`, both git-ignored), `otp.py` (OTP extraction + recent-mail lookup), `auth.py` (one-time CLI: `python -m backend.app.gmail.auth` — local browser consent flow). Message parsing handles plain text, multipart (plain preferred), and HTML-only mail (tags stripped). Nothing here ever launches a browser on its own — without a token, the tools return a clear Hinglish setup message pointing at GMAIL_SETUP.md.
 2. **Brain tools `read_gmail` + `find_otp`** (`backend/app/tools/gmail_tool.py`, registered in `agent.py`): `read_gmail` searches/lists mail with Gmail search syntax ("from:internshala", "newer_than:2d", plain words); `find_otp` finds the OTP in a recent email from a site/sender. OTP extraction is keyword-proximity first ("Your OTP is 482916", "aapka code: 7392"), standalone-6-digit fallback, years (1900–2099) and long numbers never matched. **Time window enforced in code**: only emails from the last N minutes (default 10) count — a stale OTP is never used.
@@ -170,11 +207,11 @@ The user wants Satyam to "do everything": read his Gmail, open sites like Intern
 
 ## What's new in v0.7.0 (Chat-controlled messaging + in-chat secure box)
 
-The user changed how messaging should be controlled: **not from Settings — by talking to Satyam in chat.** "Ab se Instagram ke messages dekhna" → auto-reply ON, replies without asking; "WhatsApp band kar do" → OFF. And when a token is missing, he wants a **secure box in the chat** (like Muse's secure vault card) — a masked input card in the conversation, never a plain chat message — instead of `.env` being the only path. `.env` stays as an alternative for advanced users.
+The user changed how messaging should be controlled: **not from Settings — by talking to Linda in chat.** "Ab se Instagram ke messages dekhna" → auto-reply ON, replies without asking; "WhatsApp band kar do" → OFF. And when a token is missing, he wants a **secure box in the chat** (like Muse's secure vault card) — a masked input card in the conversation, never a plain chat message — instead of `.env` being the only path. `.env` stays as an alternative for advanced users.
 
 1. **Messaging removed from Settings (PWA + Flutter):** the whole messaging section — toggles + token/ID/verify-token/app-secret fields — is gone from the PWA Settings modal and the Flutter Settings screen. Backend config keys stay (tokens still live in `.env`), but Settings has nothing to do with messaging any more. `GET /settings` returns no `whatsapp_*`/`instagram_*` keys; `POST /settings` with a messaging key is ignored.
 2. **Brain tool `set_messaging(platform, enabled)` + `get_messaging_status()`** (`backend/app/tools/messaging_tool.py`, registered in `agent.py`): the agent calls it when the user asks in chat to start/stop watching WhatsApp or Instagram. Platform aliases (`wa`, `ig`, `insta`) for small local models. The agent confirms once in plain Hinglish ("Ho gaya — ab se Instagram ke messages ka reply main khud dunga, tujhse nahi puchunga") and then just does it. The system prompt has a MESSAGING section describing the capability (Hinglish + English phrasings) and the secure-box line — never ask for the token as a chat message.
-3. **ON/OFF state in SQLite, default OFF** (`msg_control` table in `data/satyam.db`): a platform only starts auto-replying when the user says so in chat, and the state survives restarts. The v0.6 `.env` toggles `WHATSAPP_ENABLED`/`INSTAGRAM_ENABLED` are removed — **migration note:** a platform that was ON in v0.6 via Settings is OFF in v0.7 until the user says "ab se ... dekhna" once in chat. The v0.6 auto-reply engine itself is unchanged (official Meta APIs, webhooks, 24h window, dedupe, rate limit, replies as Satyam in the sender's language) — it just reads `enabled` from the store now instead of settings.
+3. **ON/OFF state in SQLite, default OFF** (`msg_control` table in `data/satyam.db`): a platform only starts auto-replying when the user says so in chat, and the state survives restarts. The v0.6 `.env` toggles `WHATSAPP_ENABLED`/`INSTAGRAM_ENABLED` are removed — **migration note:** a platform that was ON in v0.6 via Settings is OFF in v0.7 until the user says "ab se ... dekhna" once in chat. The v0.6 auto-reply engine itself is unchanged (official Meta APIs, webhooks, 24h window, dedupe, rate limit, replies as Linda in the sender's language) — it just reads `enabled` from the store now instead of settings.
 4. **Secure box (the new credential path):** when the user enables a platform whose token/ID is missing, the tool records a pending request (`msg_pending_credential` table — platform + field names only, never values) and says once what is missing. The chat UI polls `GET /messaging/pending` (after every task + on load) and renders a **masked input card in the chat flow** — PWA (`backend/static/app.js` + `.secure-card` styles in `style.css`, custom lock SVG, password inputs for token/verify/app_secret, plain input for the ID) and Flutter (`_SecureCredentialCard` in `chat_screen.dart`, `obscureText` fields, new custom `lock.svg` icon). `POST /messaging/credentials` saves to `.env` via `save_messaging_credentials` (same masking pattern as the Gemini key — never echoed back in chat, never logged, never shown in full; response carries masked previews only), then `complete_setup()` **auto-enables the platform the moment token + target id are present** — paste once, auto-reply starts. Both `/messaging/*` endpoints are behind the API-token middleware; `/webhook/*` stays public. If token+ID are set but the verify token is missing, enabling still works and the secure box is offered once for the webhook fields (otherwise Meta never delivers messages).
 5. **Status panel readiness checks kept** (diagnostics, not controls) — their hints now point at the chat commands + secure box.
 6. **Docs:** `MESSAGING_SETUP.md` rewritten — secure box first (Part C: "chat me bolo, secure box me paste karo, auto-reply chalu"), `.env` by hand as the advanced alternative, all "Settings me daalo" references gone. `README.md` capability row + changelog, `mobile_app/README.md` Settings row updated. Version strings 0.7.0 everywhere; service-worker cache bumped to v9 (installed PWAs pick up the new UI on next launch).
@@ -200,10 +237,10 @@ The user changed how messaging should be controlled: **not from Settings — by 
 The user asked for what Muse doesn't do: his own agent should **auto-manage WhatsApp and Instagram chats by itself** — read an incoming DM, understand it, and reply on its own, without asking him again and again what to say. He picked the **official (safe)** route over the quick unofficial one, so this release uses only Meta's official APIs — no Baileys, no whatsapp-web.js, no instagrapi, no login automation, no ban risk from the integration itself.
 
 1. **New module `backend/app/messaging/`** — `whatsapp.py` (Cloud API send via Graph API v26.0 + webhook parser), `instagram.py` (Messaging API send via `/{page-id}/messages` + webhook parser), `signature.py` (HMAC-SHA256 verification of `X-Hub-Signature-256`), `store.py` (SQLite dedupe + per-contact history + 24h-window timestamps in the same `data/satyam.db`), `autoreply.py` (the engine), `webhooks.py` (FastAPI router).
-2. **Auto-reply engine:** on an inbound text DM — check the platform is ON + configured, dedupe by message id (Meta redelivers; a duplicate never gets a second reply), enforce Meta's **24-hour customer-service window** (outside it: skip + log, never send), per-contact **rate limit** (30 replies/hour, loop guard only), load the last 10 turns of per-contact history, call the existing brain (Ollama/Gemini router) with a persona prompt that replies **as Satyam himself** — casual, 1–3 sentences, in the **same language/script as the incoming message** (English/Hindi/Hinglish, English default) — then send via the right client. Groups are a non-issue: the WhatsApp Cloud API doesn't deliver group messages and the Instagram Messaging API doesn't support group messaging at all (both documented in code). The engine never raises — every failure is a logged skip, so one bad message can't crash the webhook.
-3. **Webhooks:** `GET /webhook/whatsapp` + `GET /webhook/instagram` (Meta verification handshake: `hub.mode`/`hub.verify_token`/`hub.challenge`), `POST` for both (signature check when an app secret is set, non-text events/statuses/echoes ignored, every POST answers 200 immediately and replies on a background thread). Deliberately NOT behind the Satyam API-token middleware — Meta's servers can't carry it; the verify token + app-secret signature are the auth.
+2. **Auto-reply engine:** on an inbound text DM — check the platform is ON + configured, dedupe by message id (Meta redelivers; a duplicate never gets a second reply), enforce Meta's **24-hour customer-service window** (outside it: skip + log, never send), per-contact **rate limit** (30 replies/hour, loop guard only), load the last 10 turns of per-contact history, call the existing brain (Ollama/Gemini router) with a persona prompt that replies **as Linda himself** — casual, 1–3 sentences, in the **same language/script as the incoming message** (English/Hindi/Hinglish, English default) — then send via the right client. Groups are a non-issue: the WhatsApp Cloud API doesn't deliver group messages and the Instagram Messaging API doesn't support group messaging at all (both documented in code). The engine never raises — every failure is a logged skip, so one bad message can't crash the webhook.
+3. **Webhooks:** `GET /webhook/whatsapp` + `GET /webhook/instagram` (Meta verification handshake: `hub.mode`/`hub.verify_token`/`hub.challenge`), `POST` for both (signature check when an app secret is set, non-text events/statuses/echoes ignored, every POST answers 200 immediately and replies on a background thread). Deliberately NOT behind the Linda API-token middleware — Meta's servers can't carry it; the verify token + app-secret signature are the auth.
 4. **Controls:** per-platform ON/OFF toggles + token / phone number ID / page ID / verify token / app secret fields in Settings — PWA Settings modal **and** Flutter Settings screen. Toggles default ON, so a platform starts auto-replying the moment its token + id are configured. Tokens are masked in `/settings` responses (same pattern as the Gemini key) and stored in `.env`, never in the repo. Status panel gains two readiness checks (`whatsapp_autoreply`, `instagram_autoreply`): skip when unconfigured, fail with a Hinglish hint when partially configured, ok when ready.
-5. **Setup guide `MESSAGING_SETUP.md`** (Hinglish + English, written for a non-developer): Meta developer account → app → WhatsApp product + test number → permanent token via System User → webhook URL (laptop: free ngrok; 24×7: Oracle cloud URL) → verify token → test; Instagram: Business/Creator account → link Facebook Page → Page access token → webhook. Honest notes: 24h window, ~1,000 free WhatsApp service conversations/month, test mode limited to 5 registered numbers / test users (full public use needs Meta app review), replies go out as Satyam.
+5. **Setup guide `MESSAGING_SETUP.md`** (Hinglish + English, written for a non-developer): Meta developer account → app → WhatsApp product + test number → permanent token via System User → webhook URL (laptop: free ngrok; 24×7: Oracle cloud URL) → verify token → test; Instagram: Business/Creator account → link Facebook Page → Page access token → webhook. Honest notes: 24h window, ~1,000 free WhatsApp service conversations/month, test mode limited to 5 registered numbers / test users (full public use needs Meta app review), replies go out as Linda.
 6. **Backend:** version strings bumped to 0.6.0 everywhere; service-worker cache bumped to v8 (installed PWAs pick up the new Settings UI on next launch).
 
 ## What was tested HERE for v0.6.0 (in the build VM, Python 3.12.3)
@@ -227,7 +264,7 @@ The user asked for what Muse doesn't do: his own agent should **auto-manage What
 The user looked at the v0.4.1 screenshot, cropped the demo chips row, and said three things: (1) remove those suggestion chips, (2) the mic looks copied from Google and the whole interface looks copied/stock, (3) make the interface high-quality graphics. He was right about the mic — v0.4.1 used Google's Material mic path. This release fixes all three, in the PWA **and** the Flutter app. No behaviour change — chat, voice, settings, status, tasks all work exactly as before.
 
 1. **Demo chips removed (PWA + Flutter):** no "Kya kar sakte ho?" / "GitHub project banao" / "Research + Excel report" chips anywhere. The composer sits clean at the bottom. The demo prompts still live in `DEMO_GUIDE.md`. The welcome bubble's third line was updated to match (it used to point at the demo buttons).
-2. **All icons are custom hand-drawn SVG paths** — no Material Icons, no icon fonts, no emoji anywhere in the UI. One icon set, drawn from scratch for this app (same paths inlined in the PWA and shipped as files in `mobile_app/assets/icons/`, rendered in Flutter via `flutter_svg` + a `SatyamIcon` widget):
+2. **All icons are custom hand-drawn SVG paths** — no Material Icons, no icon fonts, no emoji anywhere in the UI. One icon set, drawn from scratch for this app (same paths inlined in the PWA and shipped as files in `mobile_app/assets/icons/`, rendered in Flutter via `flutter_svg` + a `LindaIcon` widget):
    - **Mic (the hero detail):** an original "orbit mic" — a gradient capsule with grille slots, wrapped by a tilted elliptical orbit ring with a satellite dot, on a slim stem with a curved smile base. Deliberately nothing like Google's mic.
    - **Speaker:** a rounded cone with three equalizer bars instead of the usual arcs.
    - **Send:** a hand-drawn paper plane with a faint fold line. **Stop:** rounded square. **Gear:** an 8-tooth gear computed geometrically (root/tip arcs + even-odd centre hole). **Pulse/status:** rounded tile + heartbeat line. **Chat/tasks/list/refresh:** matching originals. **Health icons:** filled green/red/grey circles + white check/cross/dash.
@@ -277,14 +314,14 @@ The user looked at the v0.4 screenshot and said the mic button "sahi nhi lag rah
 
 ## What's new in v0.4 (Voice — mic input + spoken replies, PWA + Flutter app)
 
-Chatting in Satyam should feel like chatting with Muse: tap the mic, talk, and hear replies spoken back. All voice work is **fully client-side and free** — no API keys, no server cost, no backend LLM change. Everything from v0.3 still works.
+Chatting in Linda should feel like chatting with Muse: tap the mic, talk, and hear replies spoken back. All voice work is **fully client-side and free** — no API keys, no server cost, no backend LLM change. Everything from v0.3 still works.
 
 1. **PWA voice** (`backend/static/`):
    - **🎤 Mic button** next to Send: tap → records via the browser Web Speech API (`SpeechRecognition`, `en-IN` first for English+Hinglish, `hi-IN` fallback if the device has no en-IN recognizer). While listening: pulsing red mic + "🎤 Sun raha hoon…" hint pill + placeholder change. The transcript lands in the composer for editing — **never auto-sent**. Tap again (or pause) to stop.
    - **🔊 Speaker button** on every finished agent message (including the welcome bubble): tap to hear it aloud via `speechSynthesis` (prefers an en-IN voice, rate 0.95); tap again to stop. Long replies are chunked into sentences; code blocks are skipped, not read aloud.
    - **Auto-speak toggle** in Settings (default **OFF**, browser-localStorage only — not a server setting): reads every finished reply aloud automatically. Stop button / a new message silences it.
    - **Robustness:** everything is feature-checked. Browsers without SpeechRecognition (Firefox/Safari) show a clean Hinglish hint toast on mic tap instead of breaking ("Is browser me voice input nahi chalta — Chrome me try karo"); the app works identically without speech APIs.
-2. **Flutter app voice** (`mobile_app/`, new `lib/voice.dart` + `speech_to_text ^7.4.0` + `flutter_tts ^4.2.5`): same behaviour — mic button in the composer (tap → listen → text in composer, no auto-send), speaker icon on agent messages, auto-speak toggle in Settings (default OFF, stored in secure storage). Mic permission handled gracefully: first tap asks Android; if denied, a clear message tells the user where to enable it (Settings → Apps → Satyam → Permissions). `RECORD_AUDIO` added to AndroidManifest. Note: `speech_to_text` is pinned to `^7.4.0` (not 7.5.0) because 7.5.0 needs Dart ≥3.12 and the build VM has Dart 3.10; on the user's laptop with newer Flutter, `^7.4.0` resolves to 7.5.x, whose API is compatible with the `SpeechListenOptions` code used here.
+2. **Flutter app voice** (`mobile_app/`, new `lib/voice.dart` + `speech_to_text ^7.4.0` + `flutter_tts ^4.2.5`): same behaviour — mic button in the composer (tap → listen → text in composer, no auto-send), speaker icon on agent messages, auto-speak toggle in Settings (default OFF, stored in secure storage). Mic permission handled gracefully: first tap asks Android; if denied, a clear message tells the user where to enable it (Settings → Apps → Linda → Permissions). `RECORD_AUDIO` added to AndroidManifest. Note: `speech_to_text` is pinned to `^7.4.0` (not 7.5.0) because 7.5.0 needs Dart ≥3.12 and the build VM has Dart 3.10; on the user's laptop with newer Flutter, `^7.4.0` resolves to 7.5.x, whose API is compatible with the `SpeechListenOptions` code used here.
 3. **Backend:** version strings bumped to 0.4.0 everywhere; service-worker cache bumped to v5 (installed PWAs pick up the new UI on next launch). No voice endpoints, no behaviour change.
 
 ## What was tested HERE (in the build VM, Python 3.12.3)
@@ -317,9 +354,9 @@ Same as v0.3. Voice input accuracy depends on the device's recognizer (Google sp
 
 ---
 
-# Delivery Notes — Satyam v0.3
+# Delivery Notes — Linda v0.3
 
-Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.3.zip`. APK: **NOT built in this VM — Flutter source only** (see "APK outcome" below).
+Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.3.zip`. APK: **NOT built in this VM — Flutter source only** (see "APK outcome" below).
 
 ## What's new in v0.3 (Android app + Oracle cloud — everything from v0.2.1 still works)
 
@@ -365,16 +402,16 @@ Same as v0.2.1. Default `APPROVAL_MODE=auto` (user's explicit choice). Oracle fr
 
 ---
 
-# Delivery Notes — Satyam v0.2.1
+# Delivery Notes — Linda v0.2.1
 
-Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.2.1.zip`.
+Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.2.1.zip`.
 
 ## What's new in v0.2.1 (design release — no feature changes, everything from v0.2 works as before)
 
-1. **Light Colourful design** — the design Satyam himself picked from mockups (22 Nov 2026). Soft pastel gradient background (light sky blue → lavender → peach) with airy pastel blobs, glossy translucent white glass chat bubbles (user bubble: soft blue→lavender gradient; agent bubble: translucent white), dark navy text for readability, gradient accent (sky → lavender → peach) on the logo, send button and focus rings, soft shadows, rounded corners. Light theme throughout — no dark backgrounds anywhere in the app UI. Reference mockup: `design/media-generation-satyam-design-light-colorful-*.webp`.
+1. **Light Colourful design** — the design Linda himself picked from mockups (22 Nov 2026). Soft pastel gradient background (light sky blue → lavender → peach) with airy pastel blobs, glossy translucent white glass chat bubbles (user bubble: soft blue→lavender gradient; agent bubble: translucent white), dark navy text for readability, gradient accent (sky → lavender → peach) on the logo, send button and focus rings, soft shadows, rounded corners. Light theme throughout — no dark backgrounds anywhere in the app UI. Reference mockup: `design/media-generation-linda-design-light-colorful-*.webp`.
 2. **New PWA icons** — regenerated with PIL to match: soft pastel gradient rounded square with a white "S" (180/192/512px). `manifest.json` theme/background colors updated to light values (`#dbeafe` / `#eef4ff`); `index.html` theme-color and status-bar style updated to match.
 3. **Service worker cache bumped to v3** — phones that installed v0.2.0 pick up the new UI on next launch.
-4. **Bug fixed (found by the visual check)** — on narrow phones the app bar was too crowded: the green "online" pill overlapped the "Satyam" title and brain/mode line. Fixed: brand text can now shrink + ellipsize, and the pill hides below 560px width (the Status button already shows a warning when something is broken). Verified by screenshot at 390px width.
+4. **Bug fixed (found by the visual check)** — on narrow phones the app bar was too crowded: the green "online" pill overlapped the "Linda" title and brain/mode line. Fixed: brand text can now shrink + ellipsize, and the pill hides below 560px width (the Status button already shows a warning when something is broken). Verified by screenshot at 390px width.
 
 ## What was tested HERE (in the build VM, Python 3.12.3)
 
@@ -403,9 +440,9 @@ Same as v0.2. Default `APPROVAL_MODE=auto` (user's explicit choice).
 
 ---
 
-# Delivery Notes — Satyam v0.2
+# Delivery Notes — Linda v0.2
 
-Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.2.zip`.
+Built 22 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.2.zip`.
 
 ## What's new in v0.2 (polish pass — everything from v0.1 still works)
 
@@ -455,9 +492,9 @@ Same as v0.1. Default `APPROVAL_MODE=auto` (user's explicit choice): the agent r
 
 ---
 
-# Delivery Notes — Satyam v0.1
+# Delivery Notes — Linda v0.1
 
-Built 21 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `satyam-ai-v0.1.zip`.
+Built 21 Nov 2026. Source: `~/workspace/satyam-ai/`. Zip: `linda-ai-v0.1.zip`.
 
 ## What was tested HERE (in the build VM, Python 3.12.3)
 

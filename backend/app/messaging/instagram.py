@@ -14,7 +14,7 @@ import httpx
 
 from .whatsapp import GRAPH_BASE, GRAPH_VERSION, MessagingError
 
-logger = logging.getLogger("satyam.messaging.instagram")
+logger = logging.getLogger("linda.messaging.instagram")
 
 MAX_TEXT_LEN = 2000  # Instagram text-message limit
 

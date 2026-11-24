@@ -1,7 +1,7 @@
 """Messaging control tool — the agent turns WhatsApp / Instagram
 auto-reply ON and OFF from chat (v0.7).
 
-The user never touches Settings for this: he just talks to Satyam
+The user never touches Settings for this: he just talks to Linda
 ("ab se Instagram ke messages dekhna", "WhatsApp band kar do") and the
 agent calls set_messaging. The ON/OFF state lives in SQLite, so it
 survives restarts.
@@ -19,7 +19,7 @@ import logging
 from ..config import settings
 from ..messaging import autoreply, store
 
-logger = logging.getLogger("satyam.tools.messaging")
+logger = logging.getLogger("linda.tools.messaging")
 
 PLATFORMS = ("whatsapp", "instagram")
 

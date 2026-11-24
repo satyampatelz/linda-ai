@@ -1,4 +1,4 @@
-# Satyam — Demo Guide (doston ko dikhane ke liye)
+# Linda — Demo Guide (doston ko dikhane ke liye)
 
 Teen demo, sabse aasan se sabse impressive tak. Har demo ke liye `run.bat` chala ke `http://127.0.0.1:8000` kholo. Demos ki detail `demos/` folder me bhi hai.
 
@@ -7,7 +7,7 @@ Teen demo, sabse aasan se sabse impressive tak. Har demo ke liye `run.bat` chala
 ---
 
 ## Demo 1 — Chat + Planning (2 min) 🗣️
-**Dikhao:** Satyam sirf jawab nahi deta, kaam plan karke execute karta hai.
+**Dikhao:** Linda sirf jawab nahi deta, kaam plan karke execute karta hai.
 
 Paste karo (ya UI me "👋 Kya kar sakte ho?" chip dabao):
 > Mujhe apne baare me batao — tum kya kya kar sakte ho?
@@ -16,22 +16,22 @@ Phir:
 > Mere liye ek Python project ka plan banao: ek to-do list app, FastAPI + HTML.
 > Plan ke baad project ke files bhi bana do.
 
-**Kya dikhega:** Live steps panel me Satyam ke steps — sochna, files banana. Phir `workspace/` folder kholo — files ban gayi hongi.
+**Kya dikhega:** Live steps panel me Linda ke steps — sochna, files banana. Phir `workspace/` folder kholo — files ban gayi hongi.
 
 ## Demo 2 — GitHub: code likhe, commit kare, push kare (5 min) 🐙
-**Dikhao:** Satyam khud developer ki tarah kaam karta hai. (Detail: `demos/demo2_github.md`)
+**Dikhao:** Linda khud developer ki tarah kaam karta hai. (Detail: `demos/demo2_github.md`)
 
-**Pehle se:** GitHub pe ek empty repo banao (`hello-satyam`), URL copy karo. Git user.name/email set ho.
+**Pehle se:** GitHub pe ek empty repo banao (`hello-linda`), URL copy karo. Git user.name/email set ho.
 
 Paste karo (URL apna daalo):
-> Workspace me 'hello-satyam' naam ka ek Python project banao — ek calculator CLI
+> Workspace me 'hello-linda' naam ka ek Python project banao — ek calculator CLI
 > with tests — phir use git me commit karo aur is repo pe push karo:
-> https://github.com/satyampatelz/hello-satyam.git
+> https://github.com/satyampatelz/hello-linda.git
 
 **Kya dikhega:** Live steps — files → git init → commit → push. Phir **github.com pe repo kholo aur refresh karo — code live hai.** Ye wala moment doston ko sabse zyada impress karega.
 
 ## Demo 3 — Browser + Excel report (3 min) 🌐
-**Dikhao:** Satyam browser khud chalata hai aur report banata hai.
+**Dikhao:** Linda browser khud chalata hai aur report banata hai.
 
 Paste karo (ya UI me "🌐 Research + Excel report" chip dabao):
 > Wikipedia pe 'Machine Learning' ke baare me research karo aur 5 key points ki

@@ -74,8 +74,8 @@ class ChatHistoryMessage {
   final String text;
 }
 
-class SatyamTask {
-  SatyamTask({
+class LindaTask {
+  LindaTask({
     required this.id,
     required this.message,
     required this.status,
@@ -86,8 +86,8 @@ class SatyamTask {
     required this.pendingApproval,
   });
 
-  factory SatyamTask.fromJson(Map<String, dynamic> j) {
-    return SatyamTask(
+  factory LindaTask.fromJson(Map<String, dynamic> j) {
+    return LindaTask(
       id: (j['id'] as String?) ?? '',
       message: (j['message'] as String?) ?? '',
       status: (j['status'] as String?) ?? '',
@@ -155,7 +155,7 @@ class AppSettings {
     required this.browserHeadless,
     required this.maxAgentSteps,
     // No messaging fields (v0.7): WhatsApp/Instagram auto-reply is
-    // controlled by talking to Satyam in chat; tokens live in .env only.
+    // controlled by talking to Linda in chat; tokens live in .env only.
   });
 
   factory AppSettings.fromJson(Map<String, dynamic> j) {
@@ -344,15 +344,15 @@ class ApiClient {
         .toList();
   }
 
-  Future<SatyamTask> getTask(String taskId) async {
+  Future<LindaTask> getTask(String taskId) async {
     final data = await _get('/tasks/$taskId');
-    return SatyamTask.fromJson(data as Map<String, dynamic>);
+    return LindaTask.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<List<SatyamTask>> getTasks() async {
+  Future<List<LindaTask>> getTasks() async {
     final data = await _get('/tasks') as Map<String, dynamic>;
     return ((data['tasks'] as List?) ?? [])
-        .map((t) => SatyamTask.fromJson(t as Map<String, dynamic>))
+        .map((t) => LindaTask.fromJson(t as Map<String, dynamic>))
         .toList();
   }
 

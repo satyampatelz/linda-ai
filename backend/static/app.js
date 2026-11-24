@@ -1,4 +1,4 @@
-/* Satyam chat UI — polls the backend for live task steps. No build step. */
+/* Linda chat UI — polls the backend for live task steps. No build step. */
 (function () {
   "use strict";
 
@@ -34,7 +34,7 @@
   var setApiToken = document.getElementById("setApiToken");
   var setAutoSpeak = document.getElementById("setAutoSpeak");
   // No messaging fields here (v0.7): WhatsApp/Instagram auto-reply is
-  // controlled by talking to Satyam in chat; tokens live in .env only.
+  // controlled by talking to Linda in chat; tokens live in .env only.
 
   // Health modal
   var healthModal = document.getElementById("healthModal");
@@ -52,7 +52,7 @@
   // Bearer token. It lives in this browser only (localStorage) and is
   // sent nowhere except this server. On a laptop server (no token set)
   // this does nothing at all — no prompt, no header.
-  var TOKEN_KEY = "satyam_api_token";
+  var TOKEN_KEY = "linda_api_token";
   var tokenAsked = false;
   function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
   function setToken(t) { try { localStorage.setItem(TOKEN_KEY, t || ""); } catch (e) {} }
@@ -126,7 +126,7 @@
   // buttons (or get a clean hint), and the app works exactly as before.
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   var ttsSupported = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
-  var AUTO_SPEAK_KEY = "satyam_auto_speak";
+  var AUTO_SPEAK_KEY = "linda_auto_speak";
   var recognition = null;
   var listening = false;
   var recogRestarting = false;
@@ -145,7 +145,7 @@
     listening = on;
     micBtn.classList.toggle("listening", on);
     listenHint.classList.toggle("hidden", !on);
-    inputEl.placeholder = on ? "Listening…" : "Tell Satyam what to do…";
+    inputEl.placeholder = on ? "Listening…" : "Tell Linda what to do…";
   }
 
   function startListening() {
@@ -472,7 +472,7 @@
     });
     healthList.innerHTML = html;
     healthMsg.textContent = data.all_ok
-      ? "Sab kuch theek hai — Satyam ready hai."
+      ? "Sab kuch theek hai — Linda ready hai."
       : "Kuch cheezein theek nahi hain — upar har fail wale ke neeche fix likha hai.";
     healthMsg.className = "form-msg " + (data.all_ok ? "ok" : "error");
     // The Status button keeps its icon + "Status" label; only the warn
@@ -752,7 +752,7 @@
     whatsapp: {
       token: { label: "WhatsApp access token", hint: "Meta dashboard → WhatsApp → API Setup → permanent token (create it via a System User). Steps: MESSAGING_SETUP.md Part A." },
       target_id: { label: "WhatsApp phone number ID", hint: "Find it in Meta dashboard → WhatsApp → API Setup." },
-      verify_token: { label: "Verify token", hint: "Koi secret string khud banao (jaise satyam-verify-12345) — wahi string Meta dashboard me webhook verify karte waqt bhi daalni hai." },
+      verify_token: { label: "Verify token", hint: "Koi secret string khud banao (jaise linda-verify-12345) — wahi string Meta dashboard me webhook verify karte waqt bhi daalni hai." },
       app_secret: { label: "App secret (optional)", hint: "Meta app → Settings → Basic → App Secret. Webhook signature check ke liye — na ho toh bhi kaam chalega.", optional: true }
     },
     instagram: {

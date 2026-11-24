@@ -34,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _geminiModelCtrl = TextEditingController();
   final _maxStepsCtrl = TextEditingController();
   // No messaging fields (v0.7): WhatsApp/Instagram auto-reply is
-  // controlled by talking to Satyam in chat; tokens live in .env only.
+  // controlled by talking to Linda in chat; tokens live in .env only.
 
   String _provider = 'ollama';
   String _approval = 'auto';
@@ -187,7 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 2),
             Text(
               hint,
-              style: const TextStyle(color: SatyamTheme.muted, fontSize: 12),
+              style: const TextStyle(color: LindaTheme.muted, fontSize: 12),
             ),
           ],
         ],
@@ -206,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const Text(
           'Sab kuch yahin se badlo — koi file edit karne ki zaroorat nahi. '
           'Save karte hi bina restart ke lagu ho jayega.',
-          style: TextStyle(color: SatyamTheme.muted, fontSize: 13),
+          style: TextStyle(color: LindaTheme.muted, fontSize: 13),
         ),
         _section('Server se connection'),
         _fieldLabel(
@@ -317,10 +317,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           subtitle: const Text(
             'Har agent reply apne aap bol ke sunayega. Band ho toh bhi har agent message ke speaker button se kabhi bhi sun sakte ho. Ye setting sirf is phone me save hoti hai.',
-            style: TextStyle(color: SatyamTheme.muted, fontSize: 12),
+            style: TextStyle(color: LindaTheme.muted, fontSize: 12),
           ),
           value: _autoSpeak,
-          activeThumbColor: SatyamTheme.accent,
+          activeThumbColor: LindaTheme.accent,
           onChanged: _setAutoSpeak,
           contentPadding: EdgeInsets.zero,
         ),

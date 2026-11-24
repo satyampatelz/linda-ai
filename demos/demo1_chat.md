@@ -1,6 +1,6 @@
 # Demo 1 — Chat + Planning (2 minute)
 
-Doston ko pehle ye dikhao: Satyam sirf chatbot nahi hai, wo kaam plan karta hai.
+Doston ko pehle ye dikhao: Linda sirf chatbot nahi hai, wo kaam plan karta hai.
 
 ## Setup
 1. `run.bat` chalao (ya `bash run.sh`), browser me `http://127.0.0.1:8000` kholo.
@@ -18,7 +18,7 @@ Phir ye try karo:
 > Plan ke baad project ke files bhi bana do.
 
 ## Doston ko kya dikhega
-- Satyam pehle sochta hai (Live steps panel me uske steps dikhte hain).
+- Linda pehle sochta hai (Live steps panel me uske steps dikhte hain).
 - Phir wo khud files banata hai — `workspace/` folder me jaake dikhao, files ban gayi hongi.
 - Har step ka result UI me live dikhta hai, kuch chhupa nahi hota.
 

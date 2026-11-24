@@ -1,4 +1,4 @@
-"""Satyam configuration — everything comes from environment variables / .env.
+"""Linda configuration — everything comes from environment variables / .env.
 
 No secrets are ever hardcoded here. The Settings screen in the app writes
 changes to .env and applies them live (no restart needed for any setting
@@ -10,18 +10,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv, set_key
 
-# Project root: satyam-ai/ (this file lives at backend/app/config.py)
+# Project root: linda-ai/ (this file lives at backend/app/config.py)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Where settings live. SATYAM_ENV_FILE lets tests point at a temp file.
-ENV_PATH = Path(os.getenv("SATYAM_ENV_FILE", str(BASE_DIR / ".env")))
+# Where settings live. LINDA_ENV_FILE lets tests point at a temp file.
+ENV_PATH = Path(os.getenv("LINDA_ENV_FILE", str(BASE_DIR / ".env")))
 
 load_dotenv(ENV_PATH)
 
 # Keys the Settings UI may change, with their .env names.
 # NOTE: WhatsApp/Instagram tokens and IDs are deliberately NOT here
 # (v0.7) — they come only from .env, and auto-reply is switched ON/OFF
-# by talking to Satyam in chat, never from Settings.
+# by talking to Linda in chat, never from Settings.
 SETTABLE_KEYS = {
     "model_provider": "MODEL_PROVIDER",
     "ollama_model": "OLLAMA_MODEL",
@@ -51,8 +51,8 @@ def mask_secret(value: str) -> str:
 
 
 class Settings:
-    app_name = "Satyam"
-    app_version = "0.9.1"
+    app_name = "Linda"
+    app_version = "0.10.0"
 
     # Class-level defaults (also used before __init__ runs). Live values
     # always live on the instance — refresh() updates instance attributes,
@@ -175,7 +175,7 @@ def save_settings(values: dict) -> None:
     """
     ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not ENV_PATH.exists():
-        ENV_PATH.write_text("# Satyam settings — created by the Settings screen.\n")
+        ENV_PATH.write_text("# Linda settings — created by the Settings screen.\n")
     for field, env_key in SETTABLE_KEYS.items():
         if field not in values or values[field] is None:
             continue
@@ -216,7 +216,7 @@ def save_messaging_credentials(platform: str, values: dict) -> list:
     mapping = MESSAGING_CREDENTIAL_KEYS.get(platform, {})
     ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not ENV_PATH.exists():
-        ENV_PATH.write_text("# Satyam settings — created by the secure box.\n")
+        ENV_PATH.write_text("# Linda settings — created by the secure box.\n")
     saved = []
     for field, env_key in mapping.items():
         value = values.get(field)

@@ -1,4 +1,4 @@
-# Satyam — cloud backend image (Oracle Always Free VM).
+# Linda — cloud backend image (Oracle Always Free VM).
 #
 # Build context is the PROJECT ROOT (see docker-compose.yml), so the
 # backend code is copied from ./backend. Run with docker compose from

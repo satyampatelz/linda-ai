@@ -1,12 +1,12 @@
-# Satyam — Your Personal AI Agent
+# Linda — Your Personal AI Agent
 
-**Satyam** is your own autonomous AI agent — like Muse, but fully yours, at **₹0**. Tell it what to do in chat, and it does the work: writes code, pushes to GitHub, researches the web and makes Excel reports, does Kaggle work, manages files.
+**Linda** is your own autonomous AI agent — like Muse, but fully yours, at **₹0**. Tell it what to do in chat, and it does the work: writes code, pushes to GitHub, researches the web and makes Excel reports, does Kaggle work, manages files.
 
 Built for **Homingo Hack Days — Agents track**.
 
 ## What it can do
 
-- **Chat + plan** — describe a task, Satyam plans the steps, runs them, and shows a full step log
+- **Chat + plan** — describe a task, Linda plans the steps, runs them, and shows a full step log
 - **Code + GitHub** — writes code, commits, and pushes (with your git credentials; no passwords stored)
 - **Browser** — works in a visible Chromium window, so you can watch it click, type, and read
 - **Kaggle** — lists competitions and datasets, downloads data, submits
@@ -52,4 +52,4 @@ For a smarter free brain, add a Gemini API key in **Settings** (free from [aistu
 
 ## Version
 
-**v0.9.1** (23 Nov 2026) — 3D app icon (teal-glass S, gold rings) everywhere.
+**v0.10.0** (24 Nov 2026) — Full rebrand: Satyam is now **Linda** — new name, new 3D app icon (teal-glass L, gold rings) everywhere. All v0.9.1 features unchanged.

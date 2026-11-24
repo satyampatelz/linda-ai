@@ -1,6 +1,6 @@
 # Site profiles — OPTIONAL notes for the browser agent.
 #
-# Satyam drives websites generically: it opens a page, reads the text and
+# Linda drives websites generically: it opens a page, reads the text and
 # links, and plans clicks from what it actually sees. No hardcoded selectors
 # are needed — and none are shipped here, because selectors change and
 # unverified ones would just break.

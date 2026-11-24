@@ -1,4 +1,4 @@
-"""SQLite memory for Satyam.
+"""SQLite memory for Linda.
 
 Three simple tables, stored in data/satyam.db (git-ignored):
   * memories — key/value facts the user told the agent ("my GitHub username is ...")

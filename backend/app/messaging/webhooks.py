@@ -6,7 +6,7 @@ GET  /webhook/instagram  same, for Instagram
 POST /webhook/instagram  same, for Instagram
 
 These endpoints are PUBLIC by design (Meta's servers call them — they
-can't carry the Satyam API token, so they are deliberately not in the
+can't carry the Linda API token, so they are deliberately not in the
 token middleware's protected prefixes). Their auth is Meta's own:
   * GET: the verify token (a secret string you invent in the Meta
     dashboard and put in .env) must match.
@@ -28,7 +28,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from ..config import settings
 from . import autoreply, instagram, signature, whatsapp
 
-logger = logging.getLogger("satyam.messaging.webhooks")
+logger = logging.getLogger("linda.messaging.webhooks")
 
 router = APIRouter()
 

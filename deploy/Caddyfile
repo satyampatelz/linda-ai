@@ -1,4 +1,4 @@
-# Caddy reverse proxy for Satyam — automatic HTTPS, no manual certs.
+# Caddy reverse proxy for Linda — automatic HTTPS, no manual certs.
 #
 # DOMAIN comes from deploy/.env (see .env.example):
 #   DOMAIN=123.45.67.89.nip.io   -> free HTTPS for your VM's public IP
@@ -10,5 +10,5 @@
 #                                  (fallback; the Flutter app still works,
 #                                  but the connection is not encrypted)
 {$DOMAIN} {
-	reverse_proxy satyam:8000
+	reverse_proxy linda:8000
 }

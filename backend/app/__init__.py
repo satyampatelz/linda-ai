@@ -1,1 +1,1 @@
-"""Satyam backend app package."""
+"""Linda backend app package."""

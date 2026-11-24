@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.satyam.agent"
+    namespace = "com.linda.agent"
     compileSdk = 34
 
     compileOptions {
@@ -18,7 +18,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.satyam.agent"
+        applicationId = "com.linda.agent"
         minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = 1

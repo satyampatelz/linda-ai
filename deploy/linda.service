@@ -1,0 +1,22 @@
+# Linda — systemd unit so the agent starts on boot and keeps running 24x7.
+#
+# Installed by deploy.sh (copies this file to /etc/systemd/system/ and
+# enables it). Oracle's Ubuntu 24.04 images use the "ubuntu" user and the
+# project is expected at /home/ubuntu/linda-ai — if your username or
+# path is different, edit the WorkingDirectory below before enabling.
+[Unit]
+Description=Linda personal AI agent (Docker Compose stack)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/linda-ai/deploy
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

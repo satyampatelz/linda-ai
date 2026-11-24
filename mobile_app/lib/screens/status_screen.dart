@@ -101,7 +101,7 @@ class _StatusScreenState extends State<StatusScreen> {
             ),
             child: Text(
               _allOk
-                  ? 'Sab kuch theek hai — Satyam ready hai.'
+                  ? 'Sab kuch theek hai — Linda ready hai.'
                   : 'Kuch cheezein theek nahi hain — har fail wale ke neeche fix likha hai.',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
@@ -117,7 +117,7 @@ class _StatusScreenState extends State<StatusScreen> {
                   children: [
                     Row(
                       children: [
-                        SatyamIcon(_iconFor(c.status), size: 20),
+                        LindaIcon(_iconFor(c.status), size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -132,7 +132,7 @@ class _StatusScreenState extends State<StatusScreen> {
                       Text(
                         c.detail,
                         style: const TextStyle(
-                          color: SatyamTheme.muted,
+                          color: LindaTheme.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -160,7 +160,7 @@ class _StatusScreenState extends State<StatusScreen> {
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _load,
-            icon: const SatyamIcon('refresh', size: 18, color: Colors.white),
+            icon: const LindaIcon('refresh', size: 18, color: Colors.white),
             label: const Text('Dobara check karo'),
           ),
         ],

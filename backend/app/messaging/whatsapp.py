@@ -10,7 +10,7 @@ import logging
 
 import httpx
 
-logger = logging.getLogger("satyam.messaging.whatsapp")
+logger = logging.getLogger("linda.messaging.whatsapp")
 
 GRAPH_BASE = "https://graph.facebook.com"
 GRAPH_VERSION = "v26.0"  # pinned; Meta keeps old versions working for years

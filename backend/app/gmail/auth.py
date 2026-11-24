@@ -3,7 +3,7 @@
     python -m backend.app.gmail.auth
 
 It opens Google's consent screen in your browser. Sign in with the
-Google account whose Gmail Satyam should read, click Allow, and the
+Google account whose Gmail Linda should read, click Allow, and the
 browser tab says "The authentication flow has completed". token.json is
 saved into data/ (git-ignored) and refreshes itself afterwards — you
 never run this again unless you revoke access in your Google account.
@@ -44,7 +44,7 @@ def main() -> int:
     TOKEN_PATH.write_text(creds.to_json())
     print()
     print(f"Ho gaya! Token save ho gaya: {TOKEN_PATH}")
-    print("Ab Satyam se chat me bolo: 'mere Gmail me kya aaya hai?'")
+    print("Ab Linda se chat me bolo: 'mere Gmail me kya aaya hai?'")
     return 0
 
 

@@ -1,4 +1,4 @@
-"""Smoke tests for Satyam v0.9.1.
+"""Smoke tests for Linda v0.10.0.
 
 Run (venv active, from the project root):
     python tests/smoke_test.py
@@ -70,7 +70,7 @@ Covers, without touching any real service:
     finish paths), both apps load it on start and render it below
     the welcome bubble (Playwright check against a live server),
     and the Windows desktop launcher is shipped and well-formed
-    (Satyam.bat reads server.txt, starts the local server only for
+    (Linda.bat reads server.txt, starts the local server only for
     local URLs, waits on /health, opens an app-mode window with a
     Chrome/Edge fallback; create-shortcut.ps1 builds the Desktop
     shortcut with the multi-size S-logo .ico + -AutoStart flag)
@@ -89,13 +89,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 # Point all runtime state at temp dirs BEFORE importing the app.
-TMP = Path(tempfile.mkdtemp(prefix="satyam-test-"))
+TMP = Path(tempfile.mkdtemp(prefix="linda-test-"))
 os.environ["DATA_DIR"] = str(TMP / "data")
 os.environ["WORKSPACE_DIR"] = str(TMP / "workspace")
 os.environ["APPROVAL_MODE"] = "auto"
 os.environ["BROWSER_HEADLESS"] = "true"
 # Settings writes go to a temp .env, never the project's real one.
-os.environ["SATYAM_ENV_FILE"] = str(TMP / ".env")
+os.environ["LINDA_ENV_FILE"] = str(TMP / ".env")
 # Fake key (test placeholder, not a real credential) for the masking test.
 os.environ["GEMINI_API_KEY"] = "AIzaFakeTestKey1234567890abcdef"
 
@@ -265,9 +265,9 @@ def test_kaggle_no_creds():
 def test_browser_headless():
     from backend.app.tools import browser_tool
     try:
-        browser_tool.browser_open("data:text/html,<h1>Hi Satyam</h1><p>test page</p>")
+        browser_tool.browser_open("data:text/html,<h1>Hi Linda</h1><p>test page</p>")
         text = browser_tool.browser_read()
-        assert "Hi Satyam" in text, text[:200]
+        assert "Hi Linda" in text, text[:200]
         browser_tool.browser_close()
     except Exception as e:  # noqa: BLE001
         if "Executable doesn't exist" in str(e) or "launch" in str(e).lower():
@@ -349,7 +349,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "satyam-shell-v15" in sw, "service worker cache not bumped to v15"
+    assert "linda-shell-v16" in sw, "service worker cache not bumped to v16"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -361,7 +361,7 @@ def test_pwa_voice_wiring():
     client = _client()
     resp = client.get("/health")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["version"] == "0.9.1", resp.text
+    assert resp.json()["version"] == "0.10.0", resp.text
 
     # --- v0.5: demo chips removed (PWA + Flutter) ---
     for gone in ("demoChips", 'class="chip"', "DemoChips", "_DemoChips"):
@@ -385,7 +385,7 @@ def test_pwa_voice_wiring():
         assert gone not in html, f"index.html still has Material path {gone}"
         assert gone not in js, f"app.js still has Material path {gone}"
     assert "Icons." not in dart, "Flutter lib still uses Material Icons.*"
-    assert "SatyamGradientIcon" not in dart, "old gradient-icon widget left"
+    assert "LindaGradientIcon" not in dart, "old gradient-icon widget left"
 
     # --- v0.5: the custom icon set is present in both apps ---
     # PWA inlines the orbit-mic ring + the speaker EQ bars.
@@ -400,7 +400,7 @@ def test_pwa_voice_wiring():
         assert f.is_file(), f"missing Flutter icon asset {f}"
         assert "<svg" in f.read_text(), f"{f} is not an SVG"
     assert "flutter_svg:" in pubspec, "pubspec missing flutter_svg"
-    assert "SatyamIcon" in dart, "Flutter SatyamIcon widget missing"
+    assert "LindaIcon" in dart, "Flutter LindaIcon widget missing"
     assert "assets/icons/" in pubspec, "pubspec missing icons asset dir"
 
 
@@ -451,7 +451,7 @@ def test_settings_masking():
 def test_settings_write_and_validate():
     from backend.app.config import settings
     client = _client()
-    env_file = Path(os.environ["SATYAM_ENV_FILE"])
+    env_file = Path(os.environ["LINDA_ENV_FILE"])
 
     # Valid write: provider + approval + steps, applied live, persisted.
     resp = client.post("/settings", json={
@@ -1111,7 +1111,7 @@ def test_messaging_secure_credentials():
     from backend.app.tools import messaging_tool
 
     client = _client()
-    env_file = Path(os.environ["SATYAM_ENV_FILE"])
+    env_file = Path(os.environ["LINDA_ENV_FILE"])
     orig = (settings.whatsapp_token, settings.whatsapp_phone_number_id,
             settings.whatsapp_verify_token, settings.whatsapp_app_secret)
     orig_enabled = store.get_platform_enabled("whatsapp")
@@ -1289,7 +1289,7 @@ def test_gmail_stub_search_and_parse():
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
     msgs = {
         "m1": _raw_msg("m1", "Internshala <noreply@internshala.com>",
-                       "New internship matches", "Hi Satyam, 3 new matches.",
+                       "New internship matches", "Hi Linda, 3 new matches.",
                        now_ms),
         "m2": _raw_msg("m2", "Friend <friend@example.com>",
                        "Hello", "Plain body wins.", now_ms, "multipart"),
@@ -1422,7 +1422,7 @@ def test_browser_persistent_profile():
         # A cookie needs a future expiry to be written to disk — session
         # cookies (no expires) live in memory only and never persist.
         expires = int(time.time()) + 86400
-        ctx.add_cookies([{"name": "satyam-persist-test", "value": "yes",
+        ctx.add_cookies([{"name": "linda-persist-test", "value": "yes",
                           "domain": "example.com", "path": "/",
                           "expires": expires}])
         profile_dir = browser_tool.browser.profile_dir
@@ -1431,7 +1431,7 @@ def test_browser_persistent_profile():
 
         browser_tool.browser_open("data:text/html,<h1>second</h1>")
         cookies = browser_tool.browser._context.cookies("https://example.com")
-        assert any(c["name"] == "satyam-persist-test" and c["value"] == "yes"
+        assert any(c["name"] == "linda-persist-test" and c["value"] == "yes"
                    for c in cookies), cookies
     except Exception as e:  # noqa: BLE001
         if _skip_if_no_chromium(e):
@@ -1704,7 +1704,7 @@ def test_welcome_message_english():
     import re
     from backend.app.agent import SYSTEM_PROMPT
 
-    expected = ("Hey! I'm Satyam — your personal AI agent. "
+    expected = ("Hey! I'm Linda — your personal AI agent. "
                 "Just tell me what you need, and I'll get it done.")
 
     # PWA: the welcome bubble holds exactly the greeting.
@@ -1714,7 +1714,7 @@ def test_welcome_message_english():
     bubble = re.sub(r"<[^>]+>", "", m.group(1))
     bubble = re.sub(r"\s+", " ", bubble).strip()
     assert bubble == expected, f"welcome bubble is not the greeting only: {bubble!r}"
-    for gone in ("Namaste", "Main Satyam hoon", "tumhara",
+    for gone in ("Namaste", "Main Linda hoon", "tumhara",
                  "Mujhe koi kaam bolo", "writing code, pushing to GitHub",
                  "First time here?"):
         assert gone not in bubble, f"welcome bubble still has {gone!r}"
@@ -1723,9 +1723,9 @@ def test_welcome_message_english():
     # as \' in the source, so normalize before matching.)
     dart = (ROOT / "mobile_app" / "lib" / "screens"
             / "chat_screen.dart").read_text().replace("\\'", "'")
-    assert "Hey! I'm Satyam" in dart, "Flutter welcome is not English"
+    assert "Hey! I'm Linda" in dart, "Flutter welcome is not English"
     assert "Just tell me what you need, and I'll get it done." in dart
-    for gone in ("Namaste", "Main Satyam hoon",
+    for gone in ("Namaste", "Main Linda hoon",
                  "writing code, pushing to GitHub",
                  "researching the web and making Excel sheets",
                  "Kaggle work — anything"):
@@ -1759,7 +1759,7 @@ def test_chat_ui_english_and_clean():
     # English placeholder in all three composer spots.
     for name, text in (("index.html", html), ("app.js", js),
                        ("chat_screen.dart", chat_dart)):
-        assert "Tell Satyam what to do…" in text, f"{name} lacks the English placeholder"
+        assert "Tell Linda what to do…" in text, f"{name} lacks the English placeholder"
 
     # English listening hint + steps empty state, both apps.
     assert "Listening… speak — tap the mic again to stop" in html
@@ -1769,7 +1769,7 @@ def test_chat_ui_english_and_clean():
 
     # No Hinglish chat strings left in any chat UI file.
     gone = (
-        "Satyam ko koi kaam bolo", "Sun raha hoon", "Bol ke likho",
+        "Linda ko koi kaam bolo", "Sun raha hoon", "Bol ke likho",
         "Task roko", "Approval chahiye", "Kaam ho raha hai",
         "kuch galat ho gaya", "Yahan agent ke steps live dikhenge",
         "dekhne ke liye dabao", "Save karo — auto-reply chalu karo",
@@ -1966,15 +1966,15 @@ def test_desktop_launcher():
     import struct
 
     desktop = ROOT / "desktop"
-    bat = (desktop / "Satyam.bat").read_text()
+    bat = (desktop / "Linda.bat").read_text()
     for want in ("server.txt", "127.0.0.1", "localhost", "/health",
                  "--app=", "chrome.exe", "msedge.exe",
                  ".venv\\Scripts\\python.exe", "run.py",
                  "goto :local", "goto :open"):
-        assert want in bat, f"Satyam.bat missing {want!r}"
+        assert want in bat, f"Linda.bat missing {want!r}"
     ps1 = (desktop / "create-shortcut.ps1").read_text()
-    for want in ("WScript.Shell", "CreateShortcut", "Satyam.lnk",
-                 "satyam.ico", "AutoStart", "Startup",
+    for want in ("WScript.Shell", "CreateShortcut", "Linda.lnk",
+                 "linda.ico", "AutoStart", "Startup",
                  'GetFolderPath("Desktop")'):
         assert want in ps1, f"create-shortcut.ps1 missing {want!r}"
     wrapper = (desktop / "create-shortcut.bat").read_text()
@@ -1985,7 +1985,7 @@ def test_desktop_launcher():
     # The .ico is a real multi-size Windows icon — parse the header
     # directly (no PIL dependency in the test venv): 6-byte header,
     # then one 16-byte entry per size (width/height byte, 0 = 256).
-    raw = (desktop / "satyam.ico").read_bytes()
+    raw = (desktop / "linda.ico").read_bytes()
     reserved, typ, count = struct.unpack("<HHH", raw[:6])
     assert reserved == 0 and typ == 1 and count >= 4, (reserved, typ, count)
     sizes = set()
@@ -2065,11 +2065,11 @@ def test_pwa_chat_history_renders():
                     page.locator("#healthClose").click()
                     page.wait_for_timeout(300)
                 body = page.locator("#messages").inner_text()
-                assert "Hey! I'm Satyam" in body, "welcome bubble missing"
+                assert "Hey! I'm Linda" in body, "welcome bubble missing"
                 assert "render-probe-user-msg" in body, body
                 assert "render-probe-agent-reply" in body, body
                 # History renders BELOW the welcome bubble.
-                assert body.index("Hey! I'm Satyam") < body.index(
+                assert body.index("Hey! I'm Linda") < body.index(
                     "render-probe-user-msg")
                 browser.close()
         except Exception as e:  # noqa: BLE001

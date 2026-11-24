@@ -1,7 +1,7 @@
 """SQLite storage for messaging — dedupe, per-contact history, 24h window,
 and the chat-controlled ON/OFF state (v0.7).
 
-Same database as the rest of Satyam (data/satyam.db), four tables:
+Same database as the rest of Linda (data/satyam.db), four tables:
   * msg_seen     — every inbound message id already handled (dedupe)
   * msg_history  — short per-contact chat history (reply context)
   * msg_contacts — last inbound message time per contact (24h window)
@@ -159,7 +159,7 @@ def count_recent_replies(platform: str, contact_id: str, hours: int = 1) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Chat control (v0.7) — ON/OFF per platform, set by talking to Satyam.
+# Chat control (v0.7) — ON/OFF per platform, set by talking to Linda.
 # ---------------------------------------------------------------------------
 def set_platform_enabled(platform: str, enabled: bool):
     """Persist the auto-reply switch for one platform. Survives restarts

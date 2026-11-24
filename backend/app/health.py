@@ -219,7 +219,7 @@ def check_messaging(platform: str):
     is a "skip" (messaging is optional — no setup failure). Partially
     configured is a "fail" with a hint, because the user clearly started
     the setup and something is missing. The ON/OFF state comes from the
-    SQLite control table (v0.7) — the user flips it by talking to Satyam
+    SQLite control table (v0.7) — the user flips it by talking to Linda
     in chat, not from Settings."""
     from .messaging import store as messaging_store
 
@@ -290,7 +290,7 @@ def check_gmail():
     if is_configured():
         return _check(
             "gmail", "Gmail connected hai", "ok",
-            "token.json ready hai — Satyam emails padh sakta hai.",
+            "token.json ready hai — Linda emails padh sakta hai.",
         )
     if has_client_secret():
         return _check(

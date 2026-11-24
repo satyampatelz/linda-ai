@@ -21,7 +21,7 @@ from pathlib import Path
 
 from ..config import BASE_DIR, settings
 
-logger = logging.getLogger("satyam.gmail")
+logger = logging.getLogger("linda.gmail")
 
 # Read-only: list + read messages. No send, no delete, no modify.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]

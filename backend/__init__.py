@@ -1,1 +1,1 @@
-"""Satyam — your personal autonomous agent, v0.9.1."""
+"""Linda — your personal autonomous agent, v0.10.0."""

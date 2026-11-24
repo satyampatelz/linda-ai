@@ -1,6 +1,6 @@
-# Satyam — Android app (Flutter)
+# Linda — Android app (Flutter)
 
-Ye Satyam agent ka **real Android app** hai — wahi agent, wahi chat,
+Ye Linda agent ka **real Android app** hai — wahi agent, wahi chat,
 ab phone pe. Laptop ka PWA (browser) aur ye app **dono ek hi server
 se baat karte hain**, isliye ek pe shuru kiya task doosre pe bhi
 dikhega.
@@ -39,7 +39,7 @@ nahi), save karte hi auto-reply chalu ho jayega. Setup guide:
 - Sab kuch phone pe hi chalta hai (Android ki speech services) — koi
   API key nahi, koi paisa nahi. Pehli baar mic dabane pe Android mic
   ki permission maangega — **Allow** kar do. Agar galti se deny ho gaya
-  toh phone ki Settings → Apps → Satyam → Permissions me mic ON karo.
+  toh phone ki Settings → Apps → Linda → Permissions me mic ON karo.
 
 ## Server se connect karna
 
@@ -101,7 +101,7 @@ Sabse aasan tareeka — **Android Studio** se:
 ### Step 3 — APK banao
 
 ```cmd
-cd C:\path\to\satyam-ai\mobile_app
+cd C:\path\to\linda-ai\mobile_app
 flutter pub get
 flutter build apk --debug
 ```
@@ -135,7 +135,7 @@ flutter build apk --release
 ```
 lib/
   main.dart        App entry + bottom nav (Chat / Tasks / Settings / Status)
-  theme.dart       Light Colourful theme (PWA jaisa gradient + glass bubbles) + SatyamIcon (custom SVG icons)
+  theme.dart       Light Colourful theme (PWA jaisa gradient + glass bubbles) + LindaIcon (custom SVG icons)
   api.dart         Backend ke HTTP calls (/chat, /tasks, /settings, /health…)
   storage.dart     Server URL + API token + auto-speak pref (flutter_secure_storage)
   voice.dart       Mic input + spoken replies (speech_to_text + flutter_tts)
@@ -157,6 +157,6 @@ assets/icons/      Custom hand-drawn SVG icon set (mic, speaker, send, gear, …
 | `Android toolchain` me error | Android Studio me SDK Tools install karo + `flutter doctor --android-licenses` chalao. |
 | App me "offline" dikh raha | Laptop server chal raha hai? (`run.bat` se start karo.) Phone aur laptop same Wi-Fi pe hain? URL me laptop ka LAN IP hai, `127.0.0.1` nahi? |
 | "API token galat" | Cloud server ke `deploy/.env` wala token Settings me daalo — bilkul same, koi space nahi. |
-| Mic dabane pe kuch nahi hota | Mic permission allow hai? Settings → Apps → Satyam → Permissions me mic ON karo. Google app / speech services update hai? |
+| Mic dabane pe kuch nahi hota | Mic permission allow hai? Settings → Apps → Linda → Permissions me mic ON karo. Google app / speech services update hai? |
 | Awaaz sunai nahi de rahi | Phone ka media volume up karo; Settings → Accessibility me "Select to Speak"/TTS engine check karo. |
 | Gradle build me out-of-memory | `android/gradle.properties` me `org.gradle.jvmargs=-Xmx1G` pehle se set hai; laptop pe RAM kam ho toh `-Xmx512m` kar do. |

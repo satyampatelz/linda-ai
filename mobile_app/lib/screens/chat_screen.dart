@@ -41,7 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _ChatMsg(
       role: 'agent',
       text:
-          'Hey! I\'m Satyam — your personal AI agent.\n\n'
+          'Hey! I\'m Linda — your personal AI agent.\n\n'
           'Just tell me what you need, and I\'ll get it done.',
     ),
   ];
@@ -151,7 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: SatyamTheme.danger),
+      SnackBar(content: Text(message), backgroundColor: LindaTheme.danger),
     );
   }
 
@@ -210,7 +210,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _pollOnce() async {
     final taskId = _taskId;
     if (taskId == null) return;
-    SatyamTask task;
+    LindaTask task;
     try {
       task = await widget.api.getTask(taskId);
     } catch (_) {
@@ -234,7 +234,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _finishTask(SatyamTask task) {
+  void _finishTask(LindaTask task) {
     _pollTimer?.cancel();
     _pollTimer = null;
     _taskId = null;
@@ -393,7 +393,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const SatyamIcon('close', size: 20),
+                          icon: const LindaIcon('close', size: 20),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -406,7 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               padding: EdgeInsets.all(24),
                               child: Text(
                                 'Your agent\'s steps will appear here live.',
-                                style: TextStyle(color: SatyamTheme.muted),
+                                style: TextStyle(color: LindaTheme.muted),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -468,12 +468,12 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: ActionChip(
-                avatar: const SatyamIcon('list', size: 18),
+                avatar: const LindaIcon('list', size: 18),
                 label: Text(
                   'Live steps (${_steps.length}) — tap to view',
                 ),
                 onPressed: _openStepsSheet,
-                backgroundColor: SatyamTheme.glassStrong,
+                backgroundColor: LindaTheme.glassStrong,
               ),
             ),
           ),
@@ -483,7 +483,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: SatyamTheme.glassStrong,
+                color: LindaTheme.glassStrong,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(color: Colors.white, width: 0.75),
               ),
@@ -491,7 +491,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SatyamIcon('mic', size: 16),
+                  LindaIcon('mic', size: 16),
                   SizedBox(width: 7),
                   Flexible(
                     child: Text(
@@ -553,8 +553,8 @@ class _MessageBubble extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      gradient: isUser ? SatyamTheme.userBubbleGradient : null,
-                      color: isUser ? null : SatyamTheme.agentBubble,
+                      gradient: isUser ? LindaTheme.userBubbleGradient : null,
+                      color: isUser ? null : LindaTheme.agentBubble,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(18),
                         topRight: const Radius.circular(18),
@@ -598,8 +598,8 @@ class _MessageBubble extends StatelessWidget {
                             msg.text,
                             style: TextStyle(
                               color: msg.isError
-                                  ? SatyamTheme.danger
-                                  : SatyamTheme.text,
+                                  ? LindaTheme.danger
+                                  : LindaTheme.text,
                             ),
                           ),
                         if (msg.isWorking && msg.stepLine != null) ...[
@@ -607,7 +607,7 @@ class _MessageBubble extends StatelessWidget {
                           Text(
                             msg.stepLine!,
                             style: const TextStyle(
-                              color: SatyamTheme.muted,
+                              color: LindaTheme.muted,
                               fontSize: 13,
                             ),
                           ),
@@ -627,7 +627,7 @@ class _MessageBubble extends StatelessWidget {
                         height: 30,
                         decoration: BoxDecoration(
                           gradient: speaking
-                              ? SatyamTheme.accentGradient
+                              ? LindaTheme.accentGradient
                               : null,
                           color: speaking
                               ? null
@@ -647,12 +647,12 @@ class _MessageBubble extends StatelessWidget {
                           customBorder: const CircleBorder(),
                           child: Center(
                             child: speaking
-                                ? const SatyamIcon(
+                                ? const LindaIcon(
                                     'speaker',
                                     size: 17,
                                     color: Colors.white,
                                   )
-                                : const SatyamIcon('speaker', size: 17),
+                                : const LindaIcon('speaker', size: 17),
                           ),
                         ),
                       ),
@@ -693,7 +693,7 @@ class _ApprovalCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${approval.action} — ${approval.detail}',
-            style: const TextStyle(color: SatyamTheme.muted, fontSize: 13),
+            style: const TextStyle(color: LindaTheme.muted, fontSize: 13),
           ),
           const SizedBox(height: 10),
           Row(
@@ -702,7 +702,7 @@ class _ApprovalCard extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => onDecide(true),
                   style: FilledButton.styleFrom(
-                    backgroundColor: SatyamTheme.green,
+                    backgroundColor: LindaTheme.green,
                   ),
                   child: const Text('Approve'),
                 ),
@@ -712,7 +712,7 @@ class _ApprovalCard extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => onDecide(false),
                   style: FilledButton.styleFrom(
-                    backgroundColor: SatyamTheme.danger,
+                    backgroundColor: LindaTheme.danger,
                   ),
                   child: const Text('Reject'),
                 ),
@@ -874,7 +874,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
         children: [
           Row(
             children: [
-              const SatyamIcon('lock', size: 18),
+              const LindaIcon('lock', size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -883,7 +883,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
                 ),
               ),
               IconButton(
-                icon: const SatyamIcon('close', size: 18),
+                icon: const LindaIcon('close', size: 18),
                 onPressed: widget.onDismiss,
                 tooltip: 'Close',
               ),
@@ -896,7 +896,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
               'Paste the token here — this is not a chat message, and the '
               'token will never be shown (it stays masked). Auto-reply '
               'starts as soon as you save.',
-              style: TextStyle(color: SatyamTheme.muted, fontSize: 13),
+              style: TextStyle(color: LindaTheme.muted, fontSize: 13),
             ),
             const SizedBox(height: 8),
             for (final field in _orderedFields) ...[
@@ -924,7 +924,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
                   child: Text(
                     meta[field]![1],
                     style: const TextStyle(
-                      color: SatyamTheme.muted,
+                      color: LindaTheme.muted,
                       fontSize: 12,
                     ),
                   ),
@@ -935,7 +935,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   _error!,
-                  style: const TextStyle(color: SatyamTheme.danger),
+                  style: const TextStyle(color: LindaTheme.danger),
                 ),
               ),
             SizedBox(
@@ -943,7 +943,7 @@ class _SecureCredentialCardState extends State<_SecureCredentialCard> {
               child: FilledButton(
                 onPressed: _saving ? null : _save,
                 style: FilledButton.styleFrom(
-                  backgroundColor: SatyamTheme.green,
+                  backgroundColor: LindaTheme.green,
                 ),
                 child: Text(
                   _saving ? 'Saving…' : 'Save — turn on auto-reply',
@@ -1000,7 +1000,7 @@ class _Composer extends StatelessWidget {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => onSend(),
               decoration: InputDecoration(
-                hintText: 'Tell Satyam what to do…',
+                hintText: 'Tell Linda what to do…',
                 hintStyle: const TextStyle(color: Color(0xFF94A3C8)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -1033,12 +1033,12 @@ class _Composer extends StatelessWidget {
               border: Border.all(color: Colors.white, width: 0.75),
               boxShadow: [
                 BoxShadow(
-                  color: SatyamTheme.accent.withValues(alpha: 0.28),
+                  color: LindaTheme.accent.withValues(alpha: 0.28),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: SatyamTheme.accent.withValues(alpha: 0.10),
+                  color: LindaTheme.accent.withValues(alpha: 0.10),
                   blurRadius: 0,
                   spreadRadius: 3,
                 ),
@@ -1048,8 +1048,8 @@ class _Composer extends StatelessWidget {
               onPressed: onMic,
               tooltip: listening ? 'Stop listening' : 'Speak to type',
               icon: listening
-                  ? const SatyamIcon('mic', size: 26, color: Colors.white)
-                  : const SatyamIcon('mic', size: 26),
+                  ? const LindaIcon('mic', size: 26, color: Colors.white)
+                  : const LindaIcon('mic', size: 26),
             ),
           ),
           const SizedBox(width: 8),
@@ -1057,22 +1057,22 @@ class _Composer extends StatelessWidget {
             FloatingActionButton.small(
               heroTag: 'stop',
               onPressed: onStop,
-              backgroundColor: SatyamTheme.danger,
-              child: const SatyamIcon('stop', size: 20, color: Colors.white),
+              backgroundColor: LindaTheme.danger,
+              child: const LindaIcon('stop', size: 20, color: Colors.white),
             ),
           if (running) const SizedBox(width: 8),
           Container(
             decoration: BoxDecoration(
-              gradient: SatyamTheme.accentGradient,
+              gradient: LindaTheme.accentGradient,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: SatyamTheme.accent.withValues(alpha: 0.4),
+                  color: LindaTheme.accent.withValues(alpha: 0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: SatyamTheme.accent.withValues(alpha: 0.3),
+                  color: LindaTheme.accent.withValues(alpha: 0.3),
                   blurRadius: 3,
                   offset: const Offset(0, 1),
                 ),
@@ -1080,7 +1080,7 @@ class _Composer extends StatelessWidget {
             ),
             child: IconButton(
               onPressed: (running || sending) ? null : onSend,
-              icon: const SatyamIcon('send', size: 21, color: Colors.white),
+              icon: const LindaIcon('send', size: 21, color: Colors.white),
             ),
           ),
         ],
@@ -1111,7 +1111,7 @@ class _StepCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 step.thought,
-                style: const TextStyle(color: SatyamTheme.muted, fontSize: 12),
+                style: const TextStyle(color: LindaTheme.muted, fontSize: 12),
               ),
             ],
             if (step.result.isNotEmpty) ...[

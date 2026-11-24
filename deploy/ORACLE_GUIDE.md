@@ -1,6 +1,6 @@
-# Oracle Cloud pe Satyam chalao — 24×7, ₹0 me (ORACLE_GUIDE)
+# Oracle Cloud pe Linda chalao — 24×7, ₹0 me (ORACLE_GUIDE)
 
-> **Ye guide kya karti hai:** Satyam ka backend Oracle ke **free** cloud server (VM) pe chalana, taaki wo **24×7 kaam kare — phone band ho ya laptop band ho**, tab bhi. Tum bas chat karte ho, kaam cloud pe hota rehta hai.
+> **Ye guide kya karti hai:** Linda ka backend Oracle ke **free** cloud server (VM) pe chalana, taaki wo **24×7 kaam kare — phone band ho ya laptop band ho**, tab bhi. Tum bas chat karte ho, kaam cloud pe hota rehta hai.
 >
 > **Kharcha: ₹0.** Oracle ka Always Free tier hamesha free hai — bas account banane ke liye **debit/credit card se verification** lagta hai (paise **nahi** katte, sirf ye check hota hai ki tum real insaan ho).
 >
@@ -31,13 +31,13 @@
 ## Step 2 — Free VM (server) banao
 
 1. Upar left me **☰ menu → Compute → Instances** → **Create Instance**.
-2. Naam do, jaise `satyam-server`.
+2. Naam do, jaise `linda-server`.
 3. **Image:** **Ubuntu 24.04** chuno (Canonical Ubuntu 24.04, minimal ya normal — koi bhi chalega).
 4. **Shape:** **Change Shape** → **Ampere** tab → **VM.Standard.A1.Flex** → sliders set karo:
    - **OCPUs: 2**
    - **Memory: 12 GB**
    - Neeche **"Always Free eligible"** likha hona chahiye — yahi confirm karta hai ki ye free hai.
-   > ℹ️ June 2026 se Always Free Ampere limit **2 OCPU / 12 GB** hai (pehle 4/24 tha). 2/12 Satyam ke liye kaafi hai.
+   > ℹ️ June 2026 se Always Free Ampere limit **2 OCPU / 12 GB** hai (pehle 4/24 tha). 2/12 Linda ke liye kaafi hai.
 5. **Boot volume:** default (47 GB) theek hai. (Free limit total 200 GB hai — 47 GB use karna safe hai.)
 6. **SSH key:** **"Generate a key pair for me"** chuno → private key download karke sambhal ke rakho (is file se hi VM me login hoga). Ya apni khud ki public key paste karo agar pehle se hai (`ssh-keygen` se bani).
 7. **Create** dabao. 1–2 min me VM **Running** ho jayegi.
@@ -49,7 +49,7 @@ Ampere (ARM) free VMs aksar **"Out of capacity"** dikhate hain — iska matlab r
 
 - **Dobara try karo** — raat ko ya subah jaldi (odd hours) capacity milne ke chance zyada hote hain.
 - **Region badlo mat** — Always Free resources sirf tumhare home region (Mumbai) me milte hain.
-- **Shape mat badlo** — AMD micro instances (1 GB RAM) Satyam ke liye bahut chhote hain; A1 ka hi wait karo.
+- **Shape mat badlo** — AMD micro instances (1 GB RAM) Linda ke liye bahut chhote hain; A1 ka hi wait karo.
 - Kuch logon ko 1–2 din lagte hain — koshish jaari rakho, ye free hai isliye demand zyada hai.
 
 ---
@@ -71,11 +71,11 @@ Bina iske tumhara phone/server internet se connect nahi ho payega.
 Laptop pe terminal (PowerShell/WSL) me, project folder se:
 
 ```powershell
-# 1. Satyam ka zip banao (agar pehle se nahi hai)
-#    satyam-ai-v0.3.zip tumhare paas pehle se hai — usi ko use karo.
+# 1. Linda ka zip banao (agar pehle se nahi hai)
+#    linda-ai-v0.3.zip tumhare paas pehle se hai — usi ko use karo.
 
 # 2. Zip VM pe bhejo (PUBLIC_IP ki jagah apna IP daalo)
-scp -i <tumhari-private-key.pem> satyam-ai-v0.3.zip ubuntu@<PUBLIC_IP>:~/
+scp -i <tumhari-private-key.pem> linda-ai-v0.3.zip ubuntu@<PUBLIC_IP>:~/
 ```
 
 Phir VM me login karo:
@@ -88,8 +88,8 @@ VM ke andar:
 
 ```bash
 sudo apt-get update -qq && sudo apt-get install -y -qq unzip
-unzip -o satyam-ai-v0.3.zip
-ls satyam-ai   # project folder dikhna chahiye
+unzip -o linda-ai-v0.3.zip
+ls linda-ai   # project folder dikhna chahiye
 ```
 
 > 💡 Agar `scp`/`ssh` me key permission error aaye (Windows pe common hai), toh key file ki permission fix karo: file pe right-click → Properties → Security → sirf apne user ko access do, baaki sab hata do. Ya WSL terminal se chalao.
@@ -101,7 +101,7 @@ ls satyam-ai   # project folder dikhna chahiye
 VM ke andar:
 
 ```bash
-cd ~/satyam-ai
+cd ~/linda-ai
 bash deploy/deploy.sh
 ```
 
@@ -122,7 +122,7 @@ Phir dobara deploy karo:
 bash deploy/deploy.sh
 ```
 
-Ab ye build karega (pehli baar 2–5 min), server start karega, **systemd unit** install karega (VM restart hone pe Satyam khud start ho jayega) aur **keep-alive cron** lagayega. Aakhir me tumhe URL + API token dikhega:
+Ab ye build karega (pehli baar 2–5 min), server start karega, **systemd unit** install karega (VM restart hone pe Linda khud start ho jayega) aur **keep-alive cron** lagayega. Aakhir me tumhe URL + API token dikhega:
 
 ```
 URL: https://123.45.67.89.nip.io
@@ -135,10 +135,10 @@ Browser me `https://<DOMAIN>/health` kholo — `{"status": "online", ...}` dikhe
 
 ## Step 6 — Phone app ko cloud se jodo
 
-1. Flutter app (satyam-v0.3.apk) phone pe install karo.
+1. Flutter app (linda-v0.3.apk) phone pe install karo.
 2. App me **Settings** kholo:
    - **Server URL:** `https://<DOMAIN>` (jaise `https://123.45.67.89.nip.io`)
-   - **API token:** deploy ke aakhir me dikha tha (ya VM pe `grep API_TOKEN ~/satyam-ai/deploy/.env` se dekh lo)
+   - **API token:** deploy ke aakhir me dikha tha (ya VM pe `grep API_TOKEN ~/linda-ai/deploy/.env` se dekh lo)
 3. Save karo → Chat kholo → `hi` likh ke bhejo. Agent cloud se jawab dega. 🎉
 
 **Laptop se bhi wahi agent chalega:** laptop ke browser me `https://<DOMAIN>` kholo — wahi PWA chat UI khulega, wahi tasks dikhenge. Laptop pe task do, phone pe result dekho (aur ulta bhi) — dono ek hi agent se baat karte hain.
@@ -155,7 +155,7 @@ Bachav:
 - **Honest baat:** keep-alive ping akela guarantee nahi hai — agar VM ek hafta bilkul bina kaam ke pada rahe toh reclaim ho sakta hai. Aisa ho toh ghabrao mat: dobara VM banao (Step 2–5, ~15 min) aur `deploy.sh` dobara chalao. Apna data (`data/` + `workspace/`) backup me rakhna achha idea hai:
   ```bash
   # VM se backup download karo (laptop pe):
-  scp -i <key.pem> -r ubuntu@<PUBLIC_IP>:~/satyam-ai/data ./satyam-backup-data
+  scp -i <key.pem> -r ubuntu@<PUBLIC_IP>:~/linda-ai/data ./linda-backup-data
   ```
 
 ---
@@ -163,7 +163,7 @@ Bachav:
 ## Roz ke kaam (VM pe)
 
 ```bash
-cd ~/satyam-ai/deploy
+cd ~/linda-ai/deploy
 
 docker compose logs -f            # live logs dekho (Ctrl+C se bahar)
 docker compose restart            # server restart karo
@@ -182,8 +182,8 @@ docker compose up -d              # dobara start karo
 |---|---|
 | `Out of capacity` (Step 2) | Odd hours me retry karo; A1 shape ka hi wait karo (AMD micro bahut chhota hai). |
 | `https://DOMAIN` nahi khul raha | (1) Step 3 ke security-list rules check karo (port 80+443). (2) VM pe `sudo iptables -L INPUT` — deploy.sh ne rules daale hone chahiye. (3) `docker compose ps` — dono containers running hone chahiye. (4) `docker compose logs caddy` — certificate error dikhe toh 2–3 min wait karo (pehla cert banne me time lagta hai). |
-| App me `401` / token error | Flutter app ki Settings me token dobara check karo — VM pe `grep API_TOKEN ~/satyam-ai/deploy/.env` se sahi token copy karo. |
-| Agent ke jawab me error | `docker compose logs -f satyam` me dekho. Common: Gemini key galat/nahi hai → `deploy/.env` me sahi key daalo, phir `docker compose up -d` (restart ke liye). |
+| App me `401` / token error | Flutter app ki Settings me token dobara check karo — VM pe `grep API_TOKEN ~/linda-ai/deploy/.env` se sahi token copy karo. |
+| Agent ke jawab me error | `docker compose logs -f linda` me dekho. Common: Gemini key galat/nahi hai → `deploy/.env` me sahi key daalo, phir `docker compose up -d` (restart ke liye). |
 | VM reclaim ho gaya | Step 2 se dobara VM banao — deploy.sh se 15 min me wapas chalu ho jayega. |
 | Kharcha dikh raha hai? | Oracle Console → Billing → Cost Analysis — Always Free resources pe **0.00** hona chahiye. Agar kuch paid dikhe toh use turant delete karo (tumne galti se paid resource bana liya hoga). |
 

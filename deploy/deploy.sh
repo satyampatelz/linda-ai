@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Satyam cloud deploy — run ONCE on the Oracle VM (Ubuntu 24.04).
+# Linda cloud deploy — run ONCE on the Oracle VM (Ubuntu 24.04).
 #
-# Usage (from the project root on the VM, e.g. ~/satyam-ai):
+# Usage (from the project root on the VM, e.g. ~/linda-ai):
 #     bash deploy/deploy.sh
 #
 # First run: installs Docker, creates deploy/.env, generates a random
@@ -81,31 +81,31 @@ elif command -v iptables-save >/dev/null 2>&1; then
 fi
 
 # --- 5. Build + start ------------------------------------------------------
-say "Satyam build + start ho raha hai (pehli baar 2-5 min lag sakte hain)..."
+say "Linda build + start ho raha hai (pehli baar 2-5 min lag sakte hain)..."
 cd "$DEPLOY_DIR"
 docker compose up -d --build
 
 # --- 6. Systemd unit (auto-start on boot) ----------------------------------
 say "Systemd unit install ho raha hai (boot pe auto-start)..."
-UNIT_SRC="$DEPLOY_DIR/satyam.service"
-if [ "$PROJECT_DIR" != "/home/ubuntu/satyam-ai" ]; then
-    sed "s|/home/ubuntu/satyam-ai|$PROJECT_DIR|g" "$UNIT_SRC" | sudo tee /etc/systemd/system/satyam.service >/dev/null
+UNIT_SRC="$DEPLOY_DIR/linda.service"
+if [ "$PROJECT_DIR" != "/home/ubuntu/linda-ai" ]; then
+    sed "s|/home/ubuntu/linda-ai|$PROJECT_DIR|g" "$UNIT_SRC" | sudo tee /etc/systemd/system/linda.service >/dev/null
 else
-    sudo cp "$UNIT_SRC" /etc/systemd/system/satyam.service
+    sudo cp "$UNIT_SRC" /etc/systemd/system/linda.service
 fi
 sudo systemctl daemon-reload
-sudo systemctl enable satyam.service >/dev/null 2>&1 || true
+sudo systemctl enable linda.service >/dev/null 2>&1 || true
 
 # --- 7. Keep-alive cron (Oracle idle reclamation se bachav) -----------------
 say "Keep-alive cron lagaya ja raha hai..."
-CRON_LINE="*/5 * * * * docker exec satyam curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 # satyam-health"
-( crontab -l 2>/dev/null | grep -v 'satyam-health' ; echo "$CRON_LINE" ) | crontab -
+CRON_LINE="*/5 * * * * docker exec linda curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 # linda-health"
+( crontab -l 2>/dev/null | grep -v 'linda-health' ; echo "$CRON_LINE" ) | crontab -
 echo "Har 5 min me /health ping hoga (ye + regular use milke VM ko idle"
 echo "reclaim hone se bachata hai — details ORACLE_GUIDE.md me)."
 
 # --- 8. Done ----------------------------------------------------------------
 echo
-echo "Ho gaya! Satyam cloud pe chal raha hai."
+echo "Ho gaya! Linda cloud pe chal raha hai."
 if [ "$DOMAIN" = ":80" ]; then
     echo "  URL (HTTP only): http://$(curl -s ifconfig.me 2>/dev/null || echo '<VM-IP>')"
 else

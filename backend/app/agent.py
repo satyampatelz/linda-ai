@@ -1,4 +1,4 @@
-"""Satyam agent — the planner loop.
+"""Linda agent — the planner loop.
 
 Flow: user instruction -> LLM plans ONE step (a JSON tool call) -> the tool
 runs -> the result goes back to the LLM -> repeat until the LLM says
@@ -26,7 +26,7 @@ from .config import settings
 from .tools import (browser_tool, code_run, files_tool, github_tool,
                     gmail_tool, kaggle_tool, messaging_tool)
 
-logger = logging.getLogger("satyam.agent")
+logger = logging.getLogger("linda.agent")
 
 MAX_OBSERVATION_CHARS = 3000
 MAX_PARSE_FAILURES = 3
@@ -118,7 +118,7 @@ def _tool_list_text() -> str:
     return "\n".join(f"- {s['name']}: {s['desc']}" for s in TOOL_SPECS)
 
 
-SYSTEM_PROMPT = f"""You are Satyam, an autonomous personal agent running on the user's own laptop.
+SYSTEM_PROMPT = f"""You are Linda, an autonomous personal agent running on the user's own laptop.
 You DO tasks, not just talk about them. Plan, use tools, verify results, then report.
 
 HOW YOU WORK — reply with ONLY a JSON object, nothing else, no markdown:

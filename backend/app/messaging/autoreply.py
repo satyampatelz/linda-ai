@@ -16,15 +16,15 @@ from .. import brain
 from ..config import settings
 from . import instagram, store, whatsapp
 
-logger = logging.getLogger("satyam.messaging.autoreply")
+logger = logging.getLogger("linda.messaging.autoreply")
 
 REPLY_WINDOW_SECONDS = 24 * 3600  # Meta's 24-hour customer-service window
 MAX_REPLIES_PER_HOUR = 30         # loop guard per contact
 MAX_TEXT_LEN = {"whatsapp": 4096, "instagram": 2000}
 
 PERSONA_PROMPT = (
-    "You are Satyam, replying to a friend's WhatsApp/Instagram DM as yourself. "
-    "You are texting back as Satyam — casual, short, natural, like a real person "
+    "You are Linda, replying to a friend's WhatsApp/Instagram DM as yourself. "
+    "You are texting back as Linda — casual, short, natural, like a real person "
     "chatting on their phone. Reply in the same language and script the sender "
     "used (English, Hindi in Devanagari, or Hinglish in Roman letters); default "
     "to English when unclear. Keep replies to 1-3 short sentences. Never say you "
@@ -37,7 +37,7 @@ def platform_config(platform: str) -> dict:
     """Live config for one platform (enabled, token, send target id).
 
     Enabled comes from the SQLite control table (v0.7): the user turns
-    a platform ON/OFF by talking to Satyam in chat. Token + target id
+    a platform ON/OFF by talking to Linda in chat. Token + target id
     come from .env only — never from Settings, never from chat."""
     if platform == "whatsapp":
         return {

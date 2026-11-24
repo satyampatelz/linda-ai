@@ -15,7 +15,7 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  List<SatyamTask> _tasks = [];
+  List<LindaTask> _tasks = [];
   bool _loading = true;
   String? _error;
 
@@ -49,14 +49,14 @@ class _TasksScreenState extends State<TasksScreen> {
   Color _statusColor(String status) {
     switch (status) {
       case 'done':
-        return SatyamTheme.green;
+        return LindaTheme.green;
       case 'error':
-        return SatyamTheme.danger;
+        return LindaTheme.danger;
       case 'running':
       case 'waiting_approval':
-        return SatyamTheme.accent;
+        return LindaTheme.accent;
       default:
-        return SatyamTheme.muted;
+        return LindaTheme.muted;
     }
   }
 
@@ -107,7 +107,7 @@ class _TasksScreenState extends State<TasksScreen> {
           child: Text(
             'Abhi koi task nahi hai.\nChat me koi kaam bolo — wo yahan dikhega.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: SatyamTheme.muted),
+            style: TextStyle(color: LindaTheme.muted),
           ),
         ),
       );
@@ -167,14 +167,14 @@ class _TasksScreenState extends State<TasksScreen> {
 class _TaskDetailScreen extends StatelessWidget {
   const _TaskDetailScreen({required this.task});
 
-  final SatyamTask task;
+  final LindaTask task;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(title: const Text('Task detail')),
-      body: SatyamBackground(
+      body: LindaBackground(
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(12),
@@ -188,7 +188,7 @@ class _TaskDetailScreen extends StatelessWidget {
                       const Text(
                         'Kaam',
                         style: TextStyle(
-                          color: SatyamTheme.muted,
+                          color: LindaTheme.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -198,7 +198,7 @@ class _TaskDetailScreen extends StatelessWidget {
                       const Text(
                         'Status',
                         style: TextStyle(
-                          color: SatyamTheme.muted,
+                          color: LindaTheme.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -212,7 +212,7 @@ class _TaskDetailScreen extends StatelessWidget {
                         const Text(
                           'Result',
                           style: TextStyle(
-                            color: SatyamTheme.muted,
+                            color: LindaTheme.muted,
                             fontSize: 12,
                           ),
                         ),
@@ -224,14 +224,14 @@ class _TaskDetailScreen extends StatelessWidget {
                         const Text(
                           'Error',
                           style: TextStyle(
-                            color: SatyamTheme.muted,
+                            color: LindaTheme.muted,
                             fontSize: 12,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           task.error!,
-                          style: const TextStyle(color: SatyamTheme.danger),
+                          style: const TextStyle(color: LindaTheme.danger),
                         ),
                       ],
                     ],
@@ -267,7 +267,7 @@ class _TaskDetailScreen extends StatelessWidget {
                           Text(
                             s.thought,
                             style: const TextStyle(
-                              color: SatyamTheme.muted,
+                              color: LindaTheme.muted,
                               fontSize: 12,
                             ),
                           ),

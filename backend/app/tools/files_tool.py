@@ -1,7 +1,7 @@
 """File tools — read, write, list and delete files.
 
 Everything is sandboxed to the workspace directory (WORKSPACE_DIR in .env,
-default: satyam-ai/workspace/). Paths that try to escape it ("../...") are
+default: linda-ai/workspace/). Paths that try to escape it ("../...") are
 refused. This keeps the agent's file work in one place you can inspect.
 """
 import shutil

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Satyam v0.2 — Linux/macOS/WSL one-time setup.
+# Linda v0.2 — Linux/macOS/WSL one-time setup.
 # Run once: bash setup.sh — then start with: bash run.sh
 # Har step pe Hinglish status dikhega; kuch gadbad ho toh wahi ruk jayega.
 cd "$(dirname "$0")"
@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 fail() { echo "  X $1"; echo "Setup ruk gaya."; exit 1; }
 
 echo "============================================"
-echo "  Satyam setup — ek baar ka kaam"
+echo "  Linda setup — ek baar ka kaam"
 echo "============================================"
 echo
 

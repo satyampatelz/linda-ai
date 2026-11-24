@@ -11,21 +11,21 @@ import 'storage.dart';
 import 'theme.dart';
 
 void main() {
-  runApp(const SatyamApp());
+  runApp(const LindaApp());
 }
 
-/// Satyam — the phone app. Four tabs (Chat, Tasks, Settings, Status)
+/// Linda — the phone app. Four tabs (Chat, Tasks, Settings, Status)
 /// talking to the same FastAPI backend as the PWA, on the laptop
 /// (http://127.0.0.1:8000) or the Oracle cloud server — whichever the
 /// user set in Settings. Same agent, same tasks, both devices.
-class SatyamApp extends StatefulWidget {
-  const SatyamApp({super.key});
+class LindaApp extends StatefulWidget {
+  const LindaApp({super.key});
 
   @override
-  State<SatyamApp> createState() => _SatyamAppState();
+  State<LindaApp> createState() => _LindaAppState();
 }
 
-class _SatyamAppState extends State<SatyamApp> {
+class _LindaAppState extends State<LindaApp> {
   ServerConfig? _config;
   late ApiClient _api;
 
@@ -47,9 +47,9 @@ class _SatyamAppState extends State<SatyamApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Satyam',
+      title: 'Linda',
       debugShowCheckedModeBanner: false,
-      theme: SatyamTheme.light(),
+      theme: LindaTheme.light(),
       home: _config == null
           ? const _LoadingSplash()
           : HomeScreen(
@@ -69,15 +69,15 @@ class _LoadingSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: SatyamBackground(
+      body: LindaBackground(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SatyamLogo(size: 64),
+              LindaLogo(size: 64),
               SizedBox(height: 16),
               Text(
-                'Satyam',
+                'Linda',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
               ),
               SizedBox(height: 24),
@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text(
           'API token is wrong or missing — enter the correct server token in Settings.',
         ),
-        backgroundColor: SatyamTheme.danger,
+        backgroundColor: LindaTheme.danger,
       ),
     );
   }
@@ -163,15 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const SatyamLogo(),
+            const LindaLogo(),
             const SizedBox(width: 10),
             const Expanded(
-              child: Text('Satyam'),
+              child: Text('Linda'),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: SatyamTheme.glassStrong,
+                color: LindaTheme.glassStrong,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(color: Colors.white),
               ),
@@ -179,14 +179,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 _online ? '● online' : '● offline',
                 style: TextStyle(
                   fontSize: 12,
-                  color: _online ? SatyamTheme.green : SatyamTheme.danger,
+                  color: _online ? LindaTheme.green : LindaTheme.danger,
                 ),
               ),
             ),
           ],
         ),
       ),
-      body: SatyamBackground(
+      body: LindaBackground(
         child: SafeArea(
           child: IndexedStack(
             index: _tab,
@@ -211,40 +211,40 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (i) => setState(() => _tab = i),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white.withValues(alpha: 0.85),
-        selectedItemColor: SatyamTheme.accent,
-        unselectedItemColor: SatyamTheme.muted,
+        selectedItemColor: LindaTheme.accent,
+        unselectedItemColor: LindaTheme.muted,
         // Custom hand-drawn tab icons (v0.5): the selected tab shows
         // the icon in its own gradient, unselected tabs are muted.
         items: [
           BottomNavigationBarItem(
-            icon: SatyamIcon(
+            icon: LindaIcon(
               'chat',
               size: 24,
-              color: _tab == 0 ? null : SatyamTheme.muted,
+              color: _tab == 0 ? null : LindaTheme.muted,
             ),
             label: 'Chat',
           ),
           BottomNavigationBarItem(
-            icon: SatyamIcon(
+            icon: LindaIcon(
               'tasks',
               size: 24,
-              color: _tab == 1 ? null : SatyamTheme.muted,
+              color: _tab == 1 ? null : LindaTheme.muted,
             ),
             label: 'Tasks',
           ),
           BottomNavigationBarItem(
-            icon: SatyamIcon(
+            icon: LindaIcon(
               'gear',
               size: 24,
-              color: _tab == 2 ? null : SatyamTheme.muted,
+              color: _tab == 2 ? null : LindaTheme.muted,
             ),
             label: 'Settings',
           ),
           BottomNavigationBarItem(
-            icon: SatyamIcon(
+            icon: LindaIcon(
               'pulse',
               size: 24,
-              color: _tab == 3 ? null : SatyamTheme.muted,
+              color: _tab == 3 ? null : LindaTheme.muted,
             ),
             label: 'Status',
           ),

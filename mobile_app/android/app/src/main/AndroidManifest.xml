@@ -3,7 +3,7 @@
     <!-- Mic input (tap the 🎤 button to talk instead of typing). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application
-        android:label="Satyam"
+        android:label="Linda"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">

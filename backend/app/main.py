@@ -1,4 +1,4 @@
-"""Satyam server — FastAPI backend + single-page chat UI.
+"""Linda server — FastAPI backend + single-page chat UI.
 
 One command to run (from the project root, venv active):
     python run.py
@@ -67,11 +67,11 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
-logger = logging.getLogger("satyam.server")
+logger = logging.getLogger("linda.server")
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
-app = FastAPI(title="Satyam", version=settings.app_version)
+app = FastAPI(title="Linda", version=settings.app_version)
 
 # Local app: the UI and API live on the same origin, but CORS open makes
 # phone-on-same-WiFi access painless too.
@@ -174,7 +174,7 @@ class SettingsRequest(BaseModel):
     browser_headless: bool | None = None
     max_agent_steps: int | None = Field(default=None, ge=1, le=50)
     # No messaging fields (v0.7): WhatsApp/Instagram tokens live in .env
-    # only, and auto-reply is switched ON/OFF by talking to Satyam in
+    # only, and auto-reply is switched ON/OFF by talking to Linda in
     # chat — Settings has nothing to do with messaging any more.
 
     @field_validator("model_provider")

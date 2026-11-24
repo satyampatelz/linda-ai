@@ -11,14 +11,14 @@ one-time auth once, then these just work.
 
 The OTP code itself is returned to the agent (it needs the digits to
 fill the form in the browser). Codes are short-lived by design; they are
-never stored anywhere by Satyam.
+never stored anywhere by Linda.
 """
 import logging
 
 from ..gmail import client as gmail_client
 from ..gmail import otp as gmail_otp
 
-logger = logging.getLogger("satyam.tools.gmail")
+logger = logging.getLogger("linda.tools.gmail")
 
 MAX_BODY_CHARS = 1500
 

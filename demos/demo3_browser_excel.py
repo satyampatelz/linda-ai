@@ -7,7 +7,7 @@ Usage (from the project root, venv active):
 What friends see: Chromium opens on screen, goes to the Wikipedia page,
 and a moment later an Excel report appears in workspace/.
 
-Tip: the same demo also works through the chat UI — just ask Satyam:
+Tip: the same demo also works through the chat UI — just ask Linda:
 "Wikipedia pe 'Machine Learning' ke baare me research karo aur 5 key points
 ki ek Excel report workspace me banao."
 """

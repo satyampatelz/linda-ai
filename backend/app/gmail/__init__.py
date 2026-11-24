@@ -1,4 +1,4 @@
-"""Gmail access for Satyam (v0.8) — official Gmail API, OAuth 2.0 only.
+"""Gmail access for Linda (v0.8) — official Gmail API, OAuth 2.0 only.
 
 Read-only scope: the agent READS emails (list/search) and finds OTP codes
 in them. It never sends, deletes, or modifies anything in the mailbox.

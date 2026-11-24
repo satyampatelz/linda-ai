@@ -3,7 +3,7 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-/// Voice for the Satyam app — mic input + spoken replies, fully
+/// Voice for the Linda app — mic input + spoken replies, fully
 /// client-side and free (Android's on-device/Google speech services).
 /// No API key, no server cost, no backend change.
 ///
@@ -85,7 +85,7 @@ class VoiceService {
       handler("Didn't catch that — tap the mic and speak again.");
     } else if (e.errorMsg == 'error_permission') {
       handler(
-        'Mic permission denied — allow the mic for Satyam in your phone Settings → Apps → Satyam → Permissions.',
+        'Mic permission denied — allow the mic for Linda in your phone Settings → Apps → Linda → Permissions.',
       );
     }
   }
@@ -106,7 +106,7 @@ class VoiceService {
     }
     if (!await _stt.hasPermission) {
       onError(
-        'Mic permission denied — allow the mic for Satyam in your phone Settings → Apps → Satyam → Permissions.',
+        'Mic permission denied — allow the mic for Linda in your phone Settings → Apps → Linda → Permissions.',
       );
       return;
     }

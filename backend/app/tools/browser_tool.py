@@ -19,7 +19,7 @@ Honest limits: CAPTCHAs cannot be solved by the agent (the user solves
 them in the visible browser). OTPs CAN be filled by the agent, two ways:
 EMAIL OTPs are read from the user's Gmail and filled automatically
 (needs the Gmail setup from GMAIL_SETUP.md); SMS OTPs cannot be read
-(Satyam has no SMS access), so the agent ASKS the user in chat for the
+(Linda has no SMS access), so the agent ASKS the user in chat for the
 code ("SMS pe aaya OTP bhejo") and fills it itself when the code comes
 — the user never has to type anything into the browser. A user-provided
 code is used once for the fill and never stored, logged, or echoed.

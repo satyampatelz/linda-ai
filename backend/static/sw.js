@@ -1,8 +1,8 @@
-/* Satyam service worker — caches the app shell so the UI loads instantly
+/* Linda service worker — caches the app shell so the UI loads instantly
    and the app can be installed on the Android home screen.
    API calls (/health, /chat, /tasks, ...) are never cached: they always
    go to the network, because they are live agent work. */
-var CACHE_NAME = "satyam-shell-v15";
+var CACHE_NAME = "linda-shell-v16";
 var SHELL_FILES = [
   "/",
   "/index.html",

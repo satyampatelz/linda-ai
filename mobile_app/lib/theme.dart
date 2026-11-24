@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Satyam "Light Colourful" design — the same palette as the PWA
+/// Linda "Light Colourful" design — the same palette as the PWA
 /// (backend/static/style.css): a smooth pastel flow (sky blue ->
 /// periwinkle -> lavender -> lilac-rose -> peach -> warm cream), soft
 /// ambient glows, glossy translucent white glass bubbles, gradient
@@ -10,8 +10,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 /// v0.5: every icon is a custom hand-drawn SVG path (assets/icons/),
 /// drawn for this app — no Material Icons, no icon fonts, no emoji.
 /// The same paths are inlined in the PWA.
-class SatyamTheme {
-  SatyamTheme._();
+class LindaTheme {
+  LindaTheme._();
 
   static const Color text = Color(0xFF1E2A4A);
   static const Color muted = Color(0xFF5F6F92);
@@ -136,15 +136,15 @@ class SatyamTheme {
 }
 
 /// Full-screen pastel gradient + soft colour glows, matching the PWA.
-class SatyamBackground extends StatelessWidget {
-  const SatyamBackground({required this.child, super.key});
+class LindaBackground extends StatelessWidget {
+  const LindaBackground({required this.child, super.key});
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: SatyamTheme.bgGradient),
+      decoration: const BoxDecoration(gradient: LindaTheme.bgGradient),
       child: Stack(
         children: [
           Positioned(
@@ -211,7 +211,7 @@ class SatyamBackground extends StatelessWidget {
   }
 }
 
-/// A custom hand-drawn Satyam icon (v0.5) — an SVG asset from
+/// A custom hand-drawn Linda icon (v0.5) — an SVG asset from
 /// assets/icons/, drawn for this app. No Material Icons, no emoji.
 /// The same paths are inlined in the PWA (backend/static/).
 ///
@@ -219,8 +219,8 @@ class SatyamBackground extends StatelessWidget {
 /// built-in colours for check/error/skip). With [color] set, the whole
 /// glyph is tinted that colour — used for white glyphs on gradient/red
 /// buttons and for muted unselected tab icons.
-class SatyamIcon extends StatelessWidget {
-  const SatyamIcon(this.name, {this.size = 22, this.color, super.key});
+class LindaIcon extends StatelessWidget {
+  const LindaIcon(this.name, {this.size = 22, this.color, super.key});
 
   /// Icon file name without extension, e.g. 'mic', 'speaker', 'gear'.
   final String name;
@@ -243,8 +243,8 @@ class SatyamIcon extends StatelessWidget {
 }
 
 /// The gradient "S" logo mark.
-class SatyamLogo extends StatelessWidget {
-  const SatyamLogo({this.size = 38, super.key});
+class LindaLogo extends StatelessWidget {
+  const LindaLogo({this.size = 38, super.key});
 
   final double size;
 
@@ -254,11 +254,11 @@ class SatyamLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: SatyamTheme.accentGradient,
+        gradient: LindaTheme.accentGradient,
         borderRadius: BorderRadius.circular(size * 0.32),
         boxShadow: [
           BoxShadow(
-            color: SatyamTheme.accent.withValues(alpha: 0.35),
+            color: LindaTheme.accent.withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

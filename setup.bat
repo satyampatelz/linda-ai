@@ -1,12 +1,12 @@
 @echo off
-REM Satyam v0.2 — Windows one-time setup.
+REM Linda v0.2 — Windows one-time setup.
 REM Run this once (double-click or: setup.bat). Then start with run.bat.
 REM Har step pe Hinglish status dikhega; kuch gadbad ho toh wahi ruk jayega.
 cd /d %~dp0
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo   Satyam setup — ek baar ka kaam
+echo   Linda setup — ek baar ka kaam
 echo ============================================
 echo.
 

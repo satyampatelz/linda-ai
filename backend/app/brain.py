@@ -14,7 +14,7 @@ import httpx
 
 from .config import settings
 
-logger = logging.getLogger("satyam.brain")
+logger = logging.getLogger("linda.brain")
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
