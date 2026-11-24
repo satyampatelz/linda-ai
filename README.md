@@ -2,8 +2,6 @@
 
 **Linda** is your own autonomous AI agent — like Muse, but fully yours, at **₹0**. Tell it what to do in chat, and it does the work: writes code, pushes to GitHub, researches the web and makes Excel reports, does Kaggle work, manages files.
 
-Built for **Homingo Hack Days — Agents track**.
-
 ## What it can do
 
 - **Chat + plan** — describe a task, Linda plans the steps, runs them, and shows a full step log
