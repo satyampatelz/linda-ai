@@ -1,1 +1,1 @@
-"""Linda — your personal autonomous agent, v0.10.1."""
+"""Linda — your personal autonomous agent, v0.10.2."""

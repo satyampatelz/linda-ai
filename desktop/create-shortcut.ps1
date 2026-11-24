@@ -1,11 +1,11 @@
-# Linda v0.9 — Desktop shortcut banata hai (Windows).
-# Aasan tareeqa: create-shortcut.bat pe double-click karo (ye script
-# khud chal jayegi). Ya PowerShell me: .\create-shortcut.ps1
-# Desktop pe "Linda" icon ban jayega — click karte hi chat khul jayega.
+# Linda v0.9 — creates the Desktop shortcut (Windows).
+# Easiest way: double-click create-shortcut.bat (this script will
+# run by itself). Or in PowerShell: .\create-shortcut.ps1
+# A "Linda" icon will appear on the Desktop — click it and the chat opens.
 #
-# Optional auto-start (laptop on hote hi server bhi start ho):
+# Optional auto-start (server starts when the laptop turns on):
 #   .\create-shortcut.ps1 -AutoStart
-# ya: create-shortcut.bat -AutoStart
+# or: create-shortcut.bat -AutoStart
 param(
     [switch]$AutoStart
 )
@@ -17,9 +17,9 @@ $Launcher = Join-Path $ProjectRoot "desktop\Linda.bat"
 $Icon = Join-Path $ProjectRoot "desktop\linda.ico"
 
 if (-not (Test-Path $Launcher)) {
-    Write-Host "Linda.bat nahi mila: $Launcher" -ForegroundColor Red
-    Write-Host "Ye script linda-ai\desktop\ folder me honi chahiye."
-    Read-Host "Band karne ke liye Enter dabao"
+    Write-Host "Linda.bat not found: $Launcher" -ForegroundColor Red
+    Write-Host "This script should be in the linda-ai\desktop\ folder."
+    Read-Host "Press Enter to close"
     exit 1
 }
 
@@ -29,16 +29,16 @@ $Shortcut = $Shell.CreateShortcut($ShortcutPath)
 $Shortcut.TargetPath = $Launcher
 $Shortcut.WorkingDirectory = $ProjectRoot
 $Shortcut.Description = "Linda — your personal AI agent"
-$Shortcut.WindowStyle = 7  # minimized: click karne pe console flash nahi hoga
+$Shortcut.WindowStyle = 7  # minimized: no console flash when clicked
 if (Test-Path $Icon) { $Shortcut.IconLocation = "$Icon,0" }
 $Shortcut.Save()
 
-Write-Host "Ho gaya — Desktop pe 'Linda' icon ban gaya." -ForegroundColor Green
+Write-Host "Done — the 'Linda' icon is on your Desktop." -ForegroundColor Green
 
 if ($AutoStart) {
     $Startup = Join-Path ([Environment]::GetFolderPath("Startup")) "Linda.lnk"
     Copy-Item $ShortcutPath $Startup -Force
-    Write-Host "Auto-start bhi on hai — laptop on hote hi Linda server khud chalega." -ForegroundColor Green
+    Write-Host "Auto-start is on too — the Linda server will start by itself when the laptop turns on." -ForegroundColor Green
 }
-Write-Host "Icon pe double-click karo — chat khul jayega (pehli baar server start hone me 10-20 second lagenge)."
-Read-Host "Band karne ke liye Enter dabao"
+Write-Host "Double-click the icon — the chat will open (the first time, the server takes 10-20 seconds to start)."
+Read-Host "Press Enter to close"

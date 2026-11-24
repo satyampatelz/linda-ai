@@ -1,10 +1,20 @@
+# Delivery Notes — Linda v0.10.2
+
+Built 24 Nov 2026. Source: `~/workspace/satyam-ai/`.
+
+## What's new in v0.10.2 (finishes the English release)
+
+v0.10.2 (24 Nov 2026) — the two desktop shortcut scripts (`desktop/create-shortcut.bat`, `desktop/create-shortcut.ps1`) are now in English too (comments and messages), closing the v0.10.1 known gap — the user gave explicit go-ahead to edit them. Everything outside the chat conversation is now in English. No functionality changes. Version 0.10.2, service-worker cache v18.
+
+---
+
 # Delivery Notes — Linda v0.10.1
 
 Built 24 Nov 2026. Source: `~/workspace/satyam-ai/`.
 
 ## What's new in v0.10.1 (language release — everything English except chat)
 
-v0.10.1 (24 Nov 2026) — language release: everything is now in clean English except the chat conversation itself — all documentation, guides, script messages, code comments, and all user-visible app strings (Settings/Status hints, toasts, labels, error messages, placeholders, tool messages, terminal output). Chat stays multilingual: Linda adapts to whatever language you speak in chat (English, Hindi, Hinglish). The SMS OTP ask and the messaging confirmations are no longer hardcoded Hinglish phrases — the agent asks/confirms in the language you're chatting in. No functionality changes, no icon changes. Version 0.10.1, service-worker cache v17. Known gap: `desktop/create-shortcut.bat` + `desktop/create-shortcut.ps1` still contain Hinglish — they couldn't be edited in this release (execution-risk check on the shortcut scripts) and need the user's go-ahead to change.
+v0.10.1 (24 Nov 2026) — language release: everything is now in clean English except the chat conversation itself — all documentation, guides, script messages, code comments, and all user-visible app strings (Settings/Status hints, toasts, labels, error messages, placeholders, tool messages, terminal output). Chat stays multilingual: Linda adapts to whatever language you speak in chat (English, Hindi, Hinglish). The SMS OTP ask and the messaging confirmations are no longer hardcoded Hinglish phrases — the agent asks/confirms in the language you're chatting in. No functionality changes, no icon changes. Version 0.10.1, service-worker cache v17. Known gap (closed in v0.10.2): `desktop/create-shortcut.bat` + `desktop/create-shortcut.ps1` still contained Hinglish — they couldn't be edited in this release (execution-risk check on the shortcut scripts); the user gave explicit go-ahead and they were converted to English in v0.10.2.
 
 ---
 

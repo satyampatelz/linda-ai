@@ -52,7 +52,7 @@ def mask_secret(value: str) -> str:
 
 class Settings:
     app_name = "Linda"
-    app_version = "0.10.1"
+    app_version = "0.10.2"
 
     # Class-level defaults (also used before __init__ runs). Live values
     # always live on the instance — refresh() updates instance attributes,

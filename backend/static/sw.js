@@ -2,7 +2,7 @@
    and the app can be installed on the Android home screen.
    API calls (/health, /chat, /tasks, ...) are never cached: they always
    go to the network, because they are live agent work. */
-var CACHE_NAME = "linda-shell-v17";
+var CACHE_NAME = "linda-shell-v18";
 var SHELL_FILES = [
   "/",
   "/index.html",

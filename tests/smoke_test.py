@@ -1,4 +1,4 @@
-"""Smoke tests for Linda v0.10.1.
+"""Smoke tests for Linda v0.10.2.
 
 Run (venv active, from the project root):
     python tests/smoke_test.py
@@ -349,7 +349,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v17" in sw, "service worker cache not bumped to v17"
+    assert "linda-shell-v18" in sw, "service worker cache not bumped to v18"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -361,7 +361,7 @@ def test_pwa_voice_wiring():
     client = _client()
     resp = client.get("/health")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["version"] == "0.10.1", resp.text
+    assert resp.json()["version"] == "0.10.2", resp.text
 
     # --- v0.5: demo chips removed (PWA + Flutter) ---
     for gone in ("demoChips", 'class="chip"', "DemoChips", "_DemoChips"):
