@@ -50,6 +50,7 @@ For a smarter free brain, add a Gemini API key in **Settings** (free from [aistu
 
 ## Version
 
+**v0.10.3** (25 Nov 2026) — Agent discipline fix: the agent no longer runs files it hasn't written, never invents repo URLs, stops after two failed approaches instead of burning all 15 steps, and mirrors the user's language (Hinglish in, Hinglish out). Git never prompts for credentials anymore.
 **v0.10.2** (24 Nov 2026) — Everything in English now.
 **v0.10.1** (24 Nov 2026) — Language release: docs and app strings in English.
 **v0.10.0** (24 Nov 2026) — Full rebrand: Satyam is now Linda.

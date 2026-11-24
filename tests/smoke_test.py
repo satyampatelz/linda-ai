@@ -1,4 +1,4 @@
-"""Smoke tests for Linda v0.10.2.
+"""Smoke tests for Linda v0.10.3.
 
 Run (venv active, from the project root):
     python tests/smoke_test.py
@@ -290,6 +290,30 @@ def test_system_prompt_auto_language():
     assert "language" not in settings.public_dict()
 
 
+def test_agent_tool_discipline():
+    """v0.10.3: the agent must not invent files or repos — the prompt
+    forces write-before-run, bans invented repo URLs, tells it to stop
+    after two failed approaches, and mirrors the user's language;
+    run_python's missing-file error tells it to write the file first;
+    git never prompts for credentials."""
+    from backend.app.agent import SYSTEM_PROMPT
+    for want in ("Never run a file you have not written or seen",
+                 "Never invent a repo URL",
+                 "If two different approaches to the same step both fail",
+                 "Hinglish in, Hinglish out"):
+        assert want in SYSTEM_PROMPT, f"prompt missing: {want}"
+    from backend.app.tools import code_run
+    try:
+        code_run.run_python("definitely_not_a_real_file_xyz.py")
+    except FileNotFoundError as e:
+        assert "Write it first with files_write" in str(e), str(e)
+    else:
+        raise AssertionError("run_python did not raise on a missing file")
+    src = (ROOT / "backend" / "app" / "tools"
+           / "github_tool.py").read_text()
+    assert "GIT_TERMINAL_PROMPT" in src, "git calls must be non-interactive"
+
+
 def test_api_token_auth():
     """Token set -> protected endpoints need Bearer, /health stays open.
     Token unset -> everything open, exactly like before."""
@@ -349,7 +373,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v18" in sw, "service worker cache not bumped to v18"
+    assert "linda-shell-v19" in sw, "service worker cache not bumped to v19"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -361,7 +385,7 @@ def test_pwa_voice_wiring():
     client = _client()
     resp = client.get("/health")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["version"] == "0.10.2", resp.text
+    assert resp.json()["version"] == "0.10.3", resp.text
 
     # --- v0.5: demo chips removed (PWA + Flutter) ---
     for gone in ("demoChips", 'class="chip"', "DemoChips", "_DemoChips"):
@@ -2137,6 +2161,7 @@ if __name__ == "__main__":
     check("desktop_launcher", test_desktop_launcher)
     check("chat_history_ui_wiring", test_chat_history_ui_wiring)
     check("pwa_chat_history_renders", test_pwa_chat_history_renders)
+    check("agent_tool_discipline", test_agent_tool_discipline)
 
     print()
     print(f"PASSED: {len(PASSED)}  FAILED: {len(FAILED)}  SKIPPED: {len(SKIPPED)}")

@@ -8,8 +8,16 @@ Typical flow the agent follows:
   github_init(path) -> files_write(...) -> github_add_commit(...) ->
   github_remote_add(path, url) -> github_push(path)
 """
+import os
 import subprocess
 from pathlib import Path
+
+
+def _git_env():
+    """Git must never prompt for a username/password — there is no
+    terminal to answer it, so a prompt would hang or fail confusingly
+    ("/dev/tty: No such device or address"). Fail fast instead."""
+    return {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
 
 
 def _run_git(repo_path, args, timeout=180):
@@ -20,6 +28,7 @@ def _run_git(repo_path, args, timeout=180):
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=_git_env(),
     )
     out = (result.stdout + result.stderr).strip()
     if result.returncode != 0:
@@ -47,6 +56,7 @@ def github_remote_add(path: str, url: str, name: str = "origin") -> str:
         cwd=str(path),
         capture_output=True,
         text=True,
+        env=_git_env(),
     )
     if result.returncode != 0:
         # Remote already exists — just update its URL.
@@ -91,6 +101,7 @@ def github_clone(url: str, path: str) -> str:
         capture_output=True,
         text=True,
         timeout=300,
+        env=_git_env(),
     )
     out = (result.stdout + result.stderr).strip()
     if result.returncode != 0:

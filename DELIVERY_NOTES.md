@@ -1,3 +1,13 @@
+# Delivery Notes — Linda v0.10.3
+
+Built 25 Nov 2026. Source: `~/workspace/satyam-ai/`.
+
+## What's new in v0.10.3 (agent discipline fix)
+
+v0.10.3 (25 Nov 2026) — fixed the failures from the first real laptop run (25 Nov ~01:08 IST, Gemini brain): the agent tried to run a script that did not exist, then tried to clone a repo URL it invented, and burned all 15 steps on a "make a mitochondria diagram" task — and answered in English to Hinglish questions. Changes: the system prompt now forces write-before-run (never run a file you have not written or seen), bans invented repo URLs/file names (only clone a repo the user named), tells the agent to write a matplotlib script itself for diagrams, stops after two failed approaches instead of trying tool after tool, and mirrors the user's language exactly (Hinglish in, Hinglish out). Tool hardening: run_python's missing-file error now tells the agent to write the file first, and all git calls run with GIT_TERMINAL_PROMPT=0 so a clone can never hang on a credential prompt. New smoke test (agent_tool_discipline, 46 total). Version 0.10.3, service-worker cache v19.
+
+---
+
 # Delivery Notes — Linda v0.10.2
 
 Built 24 Nov 2026. Source: `~/workspace/satyam-ai/`.

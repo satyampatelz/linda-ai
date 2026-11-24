@@ -20,7 +20,9 @@ def run_python(path: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     if not target.is_relative_to(base):
         raise ValueError("Only files inside the workspace can be run.")
     if not target.exists():
-        raise FileNotFoundError(f"File not found: {path}")
+        raise FileNotFoundError(
+            f"File not found: {path} — this file does not exist in the "
+            "workspace. Write it first with files_write, then run it.")
     if target.suffix != ".py":
         raise ValueError("Only .py files can be run.")
 
