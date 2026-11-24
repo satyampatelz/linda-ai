@@ -1,178 +1,178 @@
-# Oracle Cloud pe Linda chalao — 24×7, ₹0 me (ORACLE_GUIDE)
+# Run Linda on Oracle Cloud — 24×7, for ₹0 (ORACLE_GUIDE)
 
-> **Ye guide kya karti hai:** Linda ka backend Oracle ke **free** cloud server (VM) pe chalana, taaki wo **24×7 kaam kare — phone band ho ya laptop band ho**, tab bhi. Tum bas chat karte ho, kaam cloud pe hota rehta hai.
+> **What this guide does:** Run Linda's backend on Oracle's **free** cloud server (VM), so it **works 24×7 — even when your phone or laptop is off**. You just chat; the work keeps happening in the cloud.
 >
-> **Kharcha: ₹0.** Oracle ka Always Free tier hamesha free hai — bas account banane ke liye **debit/credit card se verification** lagta hai (paise **nahi** katte, sirf ye check hota hai ki tum real insaan ho).
+> **Cost: ₹0.** Oracle's Always Free tier is free forever — creating an account only needs **debit/credit card verification** (no money is charged; it just checks that you are a real person).
 >
-> **Time:** pehli baar ~30–45 min (account + VM + deploy).
+> **Time:** first time ~30–45 min (account + VM + deploy).
 
 ---
 
-## Step 0 — Kya chahiye (checklist)
+## Step 0 — What you need (checklist)
 
-- [ ] Ek email address (koi bhi — Gmail chalega)
-- [ ] Debit ya credit card (sirf verification ke liye — **koi charge nahi**)
-- [ ] Tumhara laptop + phone (is guide ke steps ke liye)
-- [ ] Gemini ki free API key — [aistudio.google.com](https://aistudio.google.com) → **Get API key** (Google account se, card nahi lagta). Cloud VM me GPU nahi hai, isliye wahan brain Gemini hi chalega.
-
----
-
-## Step 1 — Oracle Cloud account banao
-
-1. Browser me kholo: [cloud.oracle.com](https://cloud.oracle.com) → **Start for free** (ya **Sign up**).
-2. Email, password, naam, country (India) bharo → **Verify** (email pe code aayega).
-3. **Home Region chuno: Mumbai (ap-mumbai-1)** — tumhare sabse paas hai, isliye tez chalega.
-   > ⚠️ **Home Region kabhi nahi badalta** — ek baar chun liya toh wahi permanent hai. Mumbai select karna mat bhoolna.
-4. Card details daalo (verification ke liye — **paise nahi katte**).
-5. Account ban gaya — ab [cloud.oracle.com](https://cloud.oracle.com) pe **Sign in** karo.
+- [ ] An email address (any — Gmail works)
+- [ ] Debit or credit card (only for verification — **no charge**)
+- [ ] Your laptop + phone (for the steps in this guide)
+- [ ] A free Gemini API key — [aistudio.google.com](https://aistudio.google.com) → **Get API key** (with a Google account, no card needed). The cloud VM has no GPU, so the brain there runs on Gemini.
 
 ---
 
-## Step 2 — Free VM (server) banao
+## Step 1 — Create an Oracle Cloud account
 
-1. Upar left me **☰ menu → Compute → Instances** → **Create Instance**.
-2. Naam do, jaise `linda-server`.
-3. **Image:** **Ubuntu 24.04** chuno (Canonical Ubuntu 24.04, minimal ya normal — koi bhi chalega).
-4. **Shape:** **Change Shape** → **Ampere** tab → **VM.Standard.A1.Flex** → sliders set karo:
+1. Open in your browser: [cloud.oracle.com](https://cloud.oracle.com) → **Start for free** (or **Sign up**).
+2. Fill in email, password, name, country (India) → **Verify** (a code will arrive by email).
+3. **Choose Home Region: Mumbai (ap-mumbai-1)** — it is closest to you, so it will be fastest.
+   > ⚠️ **Home Region never changes** — once chosen, it is permanent. Don't forget to select Mumbai.
+4. Enter card details (for verification — **no money is charged**).
+5. Account created — now **Sign in** at [cloud.oracle.com](https://cloud.oracle.com).
+
+---
+
+## Step 2 — Create a free VM (server)
+
+1. Top-left **☰ menu → Compute → Instances** → **Create Instance**.
+2. Give it a name, like `linda-server`.
+3. **Image:** choose **Ubuntu 24.04** (Canonical Ubuntu 24.04, minimal or normal — either works).
+4. **Shape:** **Change Shape** → **Ampere** tab → **VM.Standard.A1.Flex** → set the sliders:
    - **OCPUs: 2**
    - **Memory: 12 GB**
-   - Neeche **"Always Free eligible"** likha hona chahiye — yahi confirm karta hai ki ye free hai.
-   > ℹ️ June 2026 se Always Free Ampere limit **2 OCPU / 12 GB** hai (pehle 4/24 tha). 2/12 Linda ke liye kaafi hai.
-5. **Boot volume:** default (47 GB) theek hai. (Free limit total 200 GB hai — 47 GB use karna safe hai.)
-6. **SSH key:** **"Generate a key pair for me"** chuno → private key download karke sambhal ke rakho (is file se hi VM me login hoga). Ya apni khud ki public key paste karo agar pehle se hai (`ssh-keygen` se bani).
-7. **Create** dabao. 1–2 min me VM **Running** ho jayegi.
-8. Instance page se **Public IP address** note kar lo (jaise `123.45.67.89`) — ye aage kaam aayega.
+   - It should say **"Always Free eligible"** below — that confirms it is free.
+   > ℹ️ Since June 2026 the Always Free Ampere limit is **2 OCPU / 12 GB** (earlier it was 4/24). 2/12 is enough for Linda.
+5. **Boot volume:** the default (47 GB) is fine. (The free limit is 200 GB total — using 47 GB is safe.)
+6. **SSH key:** choose **"Generate a key pair for me"** → download the private key and keep it safe (this file is how you log in to the VM). Or paste your own public key if you already have one (made with `ssh-keygen`).
+7. Press **Create**. The VM will be **Running** in 1–2 min.
+8. Note the **Public IP address** from the instance page (e.g. `123.45.67.89`) — you will need it later.
 
-### "Out of capacity" aaye toh? (bahut common hai)
+### "Out of capacity"? (very common)
 
-Ampere (ARM) free VMs aksar **"Out of capacity"** dikhate hain — iska matlab region me abhi free jagah nahi hai. Ghabrao mat:
+Ampere (ARM) free VMs often show **"Out of capacity"** — it means there is no free space in the region right now. Don't worry:
 
-- **Dobara try karo** — raat ko ya subah jaldi (odd hours) capacity milne ke chance zyada hote hain.
-- **Region badlo mat** — Always Free resources sirf tumhare home region (Mumbai) me milte hain.
-- **Shape mat badlo** — AMD micro instances (1 GB RAM) Linda ke liye bahut chhote hain; A1 ka hi wait karo.
-- Kuch logon ko 1–2 din lagte hain — koshish jaari rakho, ye free hai isliye demand zyada hai.
+- **Try again** — at night or early morning (odd hours) the chances of getting capacity are higher.
+- **Don't change region** — Always Free resources are only available in your home region (Mumbai).
+- **Don't change shape** — AMD micro instances (1 GB RAM) are too small for Linda; wait for A1.
+- Some people take 1–2 days — keep trying; demand is high because it is free.
 
 ---
 
-## Step 3 — Port 80 aur 443 kholo (cloud firewall)
+## Step 3 — Open ports 80 and 443 (cloud firewall)
 
-Bina iske tumhara phone/server internet se connect nahi ho payega.
+Without this, your phone/server won't be able to connect from the internet.
 
-1. Instance page pe **Virtual Cloud Network** (VCN) ke naam pe click karo → **Security Lists** → default security list kholo.
-2. **Add Ingress Rules** — 2 rules banao (har ek ke liye):
+1. On the instance page, click the **Virtual Cloud Network** (VCN) name → **Security Lists** → open the default security list.
+2. **Add Ingress Rules** — create 2 rules (for each one):
    - **Rule 1:** Source CIDR `0.0.0.0/0`, Destination Port Range `80`, Protocol TCP
    - **Rule 2:** Source CIDR `0.0.0.0/0`, Destination Port Range `443`, Protocol TCP
-3. Save karo. (VM ke andar ka firewall `deploy.sh` khud khol dega.)
+3. Save. (deploy.sh will open the firewall inside the VM itself.)
 
 ---
 
-## Step 4 — Code VM pe copy karo
+## Step 4 — Copy the code to the VM
 
-Laptop pe terminal (PowerShell/WSL) me, project folder se:
-
-```powershell
-# 1. Linda ka zip banao (agar pehle se nahi hai)
-#    linda-ai-v0.3.zip tumhare paas pehle se hai — usi ko use karo.
-
-# 2. Zip VM pe bhejo (PUBLIC_IP ki jagah apna IP daalo)
-scp -i <tumhari-private-key.pem> linda-ai-v0.3.zip ubuntu@<PUBLIC_IP>:~/
-```
-
-Phir VM me login karo:
+On the laptop, in a terminal (PowerShell/WSL), from the project folder:
 
 ```powershell
-ssh -i <tumhari-private-key.pem> ubuntu@<PUBLIC_IP>
+# 1. Make Linda's zip (if you don't have one already)
+#    You already have linda-ai-v0.3.zip — use that one.
+
+# 2. Send the zip to the VM (replace PUBLIC_IP with your IP)
+scp -i <your-private-key.pem> linda-ai-v0.3.zip ubuntu@<PUBLIC_IP>:~/
 ```
 
-VM ke andar:
+Then log in to the VM:
+
+```powershell
+ssh -i <your-private-key.pem> ubuntu@<PUBLIC_IP>
+```
+
+Inside the VM:
 
 ```bash
 sudo apt-get update -qq && sudo apt-get install -y -qq unzip
 unzip -o linda-ai-v0.3.zip
-ls linda-ai   # project folder dikhna chahiye
+ls linda-ai   # the project folder should show up
 ```
 
-> 💡 Agar `scp`/`ssh` me key permission error aaye (Windows pe common hai), toh key file ki permission fix karo: file pe right-click → Properties → Security → sirf apne user ko access do, baaki sab hata do. Ya WSL terminal se chalao.
+> 💡 If you get a key permission error with `scp`/`ssh` (common on Windows), fix the key file's permissions: right-click the file → Properties → Security → give access only to your own user, remove everyone else. Or run it from a WSL terminal.
 
 ---
 
-## Step 5 — Deploy karo
+## Step 5 — Deploy
 
-VM ke andar:
+Inside the VM:
 
 ```bash
 cd ~/linda-ai
 bash deploy/deploy.sh
 ```
 
-**Pehli baar** ye script Docker install karegi, `deploy/.env` banayegi, ek random **API_TOKEN** generate karegi — phir **ruk jayegi** aur bolegi ki 2 cheezein bharo. Ab `.env` edit karo:
+**The first time**, this script will install Docker, create `deploy/.env`, generate a random **API_TOKEN** — then **stop** and ask you to fill in 2 things. Now edit `.env`:
 
 ```bash
 nano deploy/.env
 ```
 
-- `DOMAIN=` ki jagah likho: `DOMAIN=<PUBLIC_IP>.nip.io`
-  (jaise IP `123.45.67.89` hai toh `DOMAIN=123.45.67.89.nip.io` — nip.io ek free service hai jo IP ko asli DNS naam bana deti hai, jisse free HTTPS certificate mil jata hai. Koi signup nahi, koi kharcha nahi.)
-- `GEMINI_API_KEY=` ki jagah apni free Gemini key paste karo (Step 0 se).
-- Save karo: `Ctrl+O`, `Enter`, `Ctrl+X`.
+- In place of `DOMAIN=`, write: `DOMAIN=<PUBLIC_IP>.nip.io`
+  (for example, if the IP is `123.45.67.89`, then `DOMAIN=123.45.67.89.nip.io` — nip.io is a free service that turns an IP into a real DNS name, which gets you a free HTTPS certificate. No signup, no cost.)
+- Paste your free Gemini key in place of `GEMINI_API_KEY=` (from Step 0).
+- Save: `Ctrl+O`, `Enter`, `Ctrl+X`.
 
-Phir dobara deploy karo:
+Then deploy again:
 
 ```bash
 bash deploy/deploy.sh
 ```
 
-Ab ye build karega (pehli baar 2–5 min), server start karega, **systemd unit** install karega (VM restart hone pe Linda khud start ho jayega) aur **keep-alive cron** lagayega. Aakhir me tumhe URL + API token dikhega:
+Now it will build (2–5 min the first time), start the server, install a **systemd unit** (Linda starts by itself when the VM restarts) and set up a **keep-alive cron**. At the end you will see the URL + API token:
 
 ```
 URL: https://123.45.67.89.nip.io
-API_TOKEN=... (Flutter app me daalna hai)
+API_TOKEN=... (enter it in the Flutter app)
 ```
 
-Browser me `https://<DOMAIN>/health` kholo — `{"status": "online", ...}` dikhe toh sab theek hai. ✅
+Open `https://<DOMAIN>/health` in your browser — if you see `{"status": "online", ...}`, everything is fine. ✅
 
 ---
 
-## Step 6 — Phone app ko cloud se jodo
+## Step 6 — Connect the phone app to the cloud
 
-1. Flutter app (linda-v0.3.apk) phone pe install karo.
-2. App me **Settings** kholo:
-   - **Server URL:** `https://<DOMAIN>` (jaise `https://123.45.67.89.nip.io`)
-   - **API token:** deploy ke aakhir me dikha tha (ya VM pe `grep API_TOKEN ~/linda-ai/deploy/.env` se dekh lo)
-3. Save karo → Chat kholo → `hi` likh ke bhejo. Agent cloud se jawab dega. 🎉
+1. Install the Flutter app (linda-v0.3.apk) on your phone.
+2. Open **Settings** in the app:
+   - **Server URL:** `https://<DOMAIN>` (e.g. `https://123.45.67.89.nip.io`)
+   - **API token:** shown at the end of the deploy (or check it on the VM with `grep API_TOKEN ~/linda-ai/deploy/.env`)
+3. Save → open Chat → send `hi`. The agent will answer from the cloud. 🎉
 
-**Laptop se bhi wahi agent chalega:** laptop ke browser me `https://<DOMAIN>` kholo — wahi PWA chat UI khulega, wahi tasks dikhenge. Laptop pe task do, phone pe result dekho (aur ulta bhi) — dono ek hi agent se baat karte hain.
+**The same agent also runs from your laptop:** open `https://<DOMAIN>` in your laptop's browser — the same PWA chat UI will open, showing the same tasks. Give a task on the laptop, see the result on the phone (and the other way round) — both talk to the same agent.
 
 ---
 
-## Idle reclamation — VM band na ho, iska dhyaan rakho
+## Idle reclamation — keep the VM from being shut down
 
-Oracle ki policy: agar ek Always Free instance **7 din tak** CPU, network **aur** memory — teeno me 95th-percentile usage **20% se kam** rahe, toh Oracle use **reclaim** (delete) kar sakta hai.
+Oracle's policy: if an Always Free instance stays below **20%** usage in CPU, network **and** memory — all three, at the 95th percentile — for **7 days**, Oracle can **reclaim** (delete) it.
 
-Bachav:
-- **deploy.sh ek keep-alive cron lagata hai** — har 5 min me server ka `/health` check hota hai, jo VM ko "zinda" rakhta hai.
-- **Regular use sabse best hai** — agent se roz kaam karwao, toh VM idle hi nahi rehta.
-- **Honest baat:** keep-alive ping akela guarantee nahi hai — agar VM ek hafta bilkul bina kaam ke pada rahe toh reclaim ho sakta hai. Aisa ho toh ghabrao mat: dobara VM banao (Step 2–5, ~15 min) aur `deploy.sh` dobara chalao. Apna data (`data/` + `workspace/`) backup me rakhna achha idea hai:
+How to avoid it:
+- **deploy.sh sets up a keep-alive cron** — the server's `/health` is checked every 5 min, which keeps the VM "alive".
+- **Regular use is the best protection** — get the agent to do work every day, and the VM never stays idle.
+- **Honest note:** a keep-alive ping alone is no guarantee — if the VM sits completely unused for a week, it can still be reclaimed. If that happens, don't worry: create the VM again (Steps 2–5, ~15 min) and run `deploy.sh` again. It is a good idea to keep a backup of your data (`data/` + `workspace/`):
   ```bash
-  # VM se backup download karo (laptop pe):
+  # Download a backup from the VM (on the laptop):
   scp -i <key.pem> -r ubuntu@<PUBLIC_IP>:~/linda-ai/data ./linda-backup-data
   ```
 
 ---
 
-## Roz ke kaam (VM pe)
+## Daily tasks (on the VM)
 
 ```bash
 cd ~/linda-ai/deploy
 
-docker compose logs -f            # live logs dekho (Ctrl+C se bahar)
-docker compose restart            # server restart karo
-docker compose ps                 # containers chal rahe hain ya nahi
-docker compose down               # sab band karo (data safe rehta hai)
-docker compose up -d              # dobara start karo
+docker compose logs -f            # live logs (Ctrl+C to exit)
+docker compose restart            # restart the server
+docker compose ps                 # check whether the containers are running
+docker compose down               # stop everything (data stays safe)
+docker compose up -d              # start again
 ```
 
-**Update karna hai (nayi version aaye toh):** naya zip VM pe bhejo, extract karo (purane folder ke upar — `data/` aur `workspace/` Docker volumes me hain, safe rahenge), phir `bash deploy/deploy.sh` dobara chalao.
+**To update (when a new version comes out):** send the new zip to the VM, extract it (over the old folder — `data/` and `workspace/` are Docker volumes, so they stay safe), then run `bash deploy/deploy.sh` again.
 
 ---
 
@@ -180,19 +180,19 @@ docker compose up -d              # dobara start karo
 
 | Problem | Fix |
 |---|---|
-| `Out of capacity` (Step 2) | Odd hours me retry karo; A1 shape ka hi wait karo (AMD micro bahut chhota hai). |
-| `https://DOMAIN` nahi khul raha | (1) Step 3 ke security-list rules check karo (port 80+443). (2) VM pe `sudo iptables -L INPUT` — deploy.sh ne rules daale hone chahiye. (3) `docker compose ps` — dono containers running hone chahiye. (4) `docker compose logs caddy` — certificate error dikhe toh 2–3 min wait karo (pehla cert banne me time lagta hai). |
-| App me `401` / token error | Flutter app ki Settings me token dobara check karo — VM pe `grep API_TOKEN ~/linda-ai/deploy/.env` se sahi token copy karo. |
-| Agent ke jawab me error | `docker compose logs -f linda` me dekho. Common: Gemini key galat/nahi hai → `deploy/.env` me sahi key daalo, phir `docker compose up -d` (restart ke liye). |
-| VM reclaim ho gaya | Step 2 se dobara VM banao — deploy.sh se 15 min me wapas chalu ho jayega. |
-| Kharcha dikh raha hai? | Oracle Console → Billing → Cost Analysis — Always Free resources pe **0.00** hona chahiye. Agar kuch paid dikhe toh use turant delete karo (tumne galti se paid resource bana liya hoga). |
+| `Out of capacity` (Step 2) | Retry at odd hours; wait for the A1 shape (AMD micro is too small). |
+| `https://DOMAIN` won't open | (1) Check the Step 3 security-list rules (ports 80+443). (2) On the VM, `sudo iptables -L INPUT` — deploy.sh should have added the rules. (3) `docker compose ps` — both containers should be running. (4) `docker compose logs caddy` — if you see a certificate error, wait 2–3 min (the first certificate takes time to be created). |
+| App shows `401` / token error | Check the token again in the Flutter app's Settings — copy the correct token from the VM with `grep API_TOKEN ~/linda-ai/deploy/.env`. |
+| Error in the agent's reply | Look in `docker compose logs -f linda`. Common cause: Gemini key wrong or missing → put the correct key in `deploy/.env`, then `docker compose up -d` (to restart). |
+| VM was reclaimed | Create the VM again from Step 2 — deploy.sh will get it running again in 15 min. |
+| Seeing a charge? | Oracle Console → Billing → Cost Analysis — Always Free resources should show **0.00**. If something paid shows up, delete it at once (you probably created a paid resource by mistake). |
 
 ---
 
-## Yaad rakhne layak baatein
+## Things worth remembering
 
-- **₹0 kharcha** — sab kuch Always Free tier me hai (2 OCPU / 12 GB VM, 200 GB storage, 10 TB/month traffic).
-- **Phone/laptop band ho toh bhi kaam chalta rahega** — agent cloud pe hai.
-- **API token sambhal ke rakho** — jiske paas token hai, wo tumhara agent use kar sakta hai. Kisi se share mat karo.
-- **Browser cloud pe headless chalta hai** — tum Chrome ko screen pe nahi dekh paoge (VM me screen hi nahi hai). Browser wale tasks phir bhi kaam karenge; screenshots `workspace/screenshots/` me save hote hain.
-- **CAPTCHA/OTP** cloud pe bhi tumhari madad mangenge — agent ruk ke batayega, tum phone se solve karoge (jaise pehle discuss hua tha).
+- **₹0 cost** — everything is in the Always Free tier (2 OCPU / 12 GB VM, 200 GB storage, 10 TB/month traffic).
+- **Work keeps going even with your phone/laptop off** — the agent is in the cloud.
+- **Keep your API token safe** — anyone who has the token can use your agent. Don't share it with anyone.
+- **The browser runs headless in the cloud** — you won't see Chrome on a screen (the VM has no screen). Browser tasks still work; screenshots are saved in `workspace/screenshots/`.
+- **CAPTCHA/OTP** will still ask for your help in the cloud — the agent will pause and tell you, and you solve it from your phone (as discussed before).

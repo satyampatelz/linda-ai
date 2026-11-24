@@ -29,18 +29,18 @@ def _ollama_running() -> bool:
 
 
 if __name__ == "__main__":
-    print("Linda chal raha hai.")
+    print("Linda is running.")
     print(f"  Laptop: http://127.0.0.1:{settings.port}")
     if settings.host == "0.0.0.0":
         print(f"  Phone (same Wi-Fi): http://<laptop-LAN-IP>:{settings.port}")
     print(f"  Brain: {settings.model_provider} | Approval: {settings.approval_mode}")
     if settings.model_provider == "ollama" and not _ollama_running():
         print()
-        print("  ! WARNING: Ollama nahi chal raha — chat kaam nahi karega jab tak")
-        print("    Ollama start nahi hota. Ollama app kholo ya 'ollama serve' chalao.")
-        print("    (Ya app me Settings me Gemini brain chuno — usme Ollama nahi chahiye.)")
-        print("    Server phir bhi chal raha hai; Status panel me sab dikhega.")
-    print("Band karne ke liye Ctrl+C dabao.")
+        print("  ! WARNING: Ollama is not running — chat won't work until")
+        print("    Ollama starts. Open the Ollama app or run 'ollama serve'.")
+        print("    (Or pick the Gemini brain in Settings — it doesn't need Ollama.)")
+        print("    The server is still running; the Status panel shows everything.")
+    print("Press Ctrl+C to stop.")
     uvicorn.run(
         "backend.app.main:app",
         host=settings.host,

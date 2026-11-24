@@ -89,9 +89,9 @@ def set_messaging(platform: str, enabled: bool) -> str:
     platform = _normalize(platform)
     if not platform:
         return (
-            "Platform samajh nahi aaya — 'WhatsApp' ya 'Instagram' bolo. "
-            "Jaise: 'ab se Instagram ke messages dekhna' ya "
-            "'WhatsApp band kar do'."
+            "Couldn't understand the platform — say 'WhatsApp' or "
+            "'Instagram'. For example: 'watch my Instagram messages from "
+            "now on' or 'turn off WhatsApp'."
         )
     name = _DISPLAY[platform]
     enabled = bool(enabled)
@@ -106,16 +106,16 @@ def set_messaging(platform: str, enabled: bool) -> str:
             pending = missing_fields(platform)
             if pending:
                 store.set_pending_credential(platform, pending)
-            keys = " aur ".join(missing)
+            keys = " and ".join(missing)
             logger.info("Cannot enable %s auto-reply: missing %s",
                         platform, keys)
             return (
-                f"{name} ka auto-reply on nahi ho paya — {keys} set nahi "
-                f"hai. Neeche chat me ek secure box khul gaya hai — usme "
-                f"{keys} paste kar do, main save karke auto-reply chalu "
-                f"kar dunga. (Token kabhi chat message me mat likho — "
-                f"sirf secure box me. .env me haath se daalna ho toh "
-                f"steps MESSAGING_SETUP.md me hain.)"
+                f"Couldn't turn on {name} auto-reply — {keys} not set. "
+                f"A secure box has opened below in this chat — paste "
+                f"{keys} there and I'll save them and turn auto-reply on. "
+                f"(Never type a token in a chat message — secure box only. "
+                f"To add them to .env by hand, the steps are in "
+                f"MESSAGING_SETUP.md.)"
             )
         already = store.get_platform_enabled(platform)
         store.set_platform_enabled(platform, True)
@@ -127,32 +127,32 @@ def set_messaging(platform: str, enabled: bool) -> str:
                    if f in ("verify_token", "app_secret")]
         if pending:
             store.set_pending_credential(platform, pending)
-            base = (f"{name} ka auto-reply pehle se on hai."
+            base = (f"{name} auto-reply is already on."
                     if already else
-                    f"Ho gaya — ab se {name} ke messages ka reply main "
-                    f"khud dunga, tujhse nahi puchunga.")
+                    f"Done — from now on I'll reply to {name} messages "
+                    f"myself, without asking you.")
             return (
-                f"{base} Ek cheez aur: webhook ke liye verify token bhi "
-                f"chahiye (warna message aayega hi nahi) — neeche secure "
-                f"box me daal do."
+                f"{base} One more thing: the webhook also needs a verify "
+                f"token (otherwise no messages will arrive) — put it in "
+                f"the secure box below."
             )
         store.clear_pending_credential(platform)
         if already:
-            return (f"{name} ka auto-reply pehle se on hai — aane wale "
-                    f"messages ka reply main khud de raha hoon.")
+            return (f"{name} auto-reply is already on — I'm already "
+                    f"replying to incoming messages myself.")
         return (
-            f"Ho gaya — ab se {name} ke messages ka reply main khud dunga, "
-            f"tujhse nahi puchunga."
+            f"Done — from now on I'll reply to {name} messages myself, "
+            f"without asking you."
         )
 
     already_off = not store.get_platform_enabled(platform)
     store.set_platform_enabled(platform, False)
     logger.info("%s auto-reply disabled from chat", platform)
     if already_off:
-        return f"{name} ka auto-reply pehle se band hai."
+        return f"{name} auto-reply is already off."
     return (
-        f"Ho gaya — {name} ka auto-reply band kar diya hai. Message aayega "
-        f"toh reply nahi jayega."
+        f"Done — {name} auto-reply is now off. Incoming messages won't "
+        f"get a reply."
     )
 
 
@@ -181,7 +181,7 @@ def complete_setup(platform: str) -> dict:
 
 def get_messaging_status() -> str:
     """Short status of both platforms: ON/OFF + configured or not.
-    Used when the user asks ('WhatsApp reply on hai?')."""
+    Used when the user asks ('Is WhatsApp reply on?')."""
     lines = []
     for platform in PLATFORMS:
         name = _DISPLAY[platform]
@@ -189,21 +189,20 @@ def get_messaging_status() -> str:
         missing = _missing_keys(platform)
         if enabled and not missing:
             lines.append(
-                f"{name}: ON hai — aane wale messages ka reply main khud "
-                f"de raha hoon.")
+                f"{name}: ON — I'm replying to incoming messages myself.")
         elif enabled:
             lines.append(
-                f"{name}: ON hai par setup adhoora hai "
-                f"({', '.join(missing)} set nahi hai) — reply nahi jayega "
-                f"jab tak secure box me ye na daal do (bolo '{name} ke "
-                f"messages dekhna' toh box khul jayega).")
+                f"{name}: ON but setup is incomplete "
+                f"({', '.join(missing)} not set) — no replies will go out "
+                f"until you add these in the secure box (say 'watch my "
+                f"{name} messages' and the box will open).")
         elif missing:
             lines.append(
-                f"{name}: OFF hai, aur setup bhi nahi hua "
-                f"({', '.join(missing)} missing hai) — bolo '{name} ke "
-                f"messages dekhna', phir secure box me ye daal do.")
+                f"{name}: OFF, and not set up yet "
+                f"({', '.join(missing)} missing) — say 'watch my {name} "
+                f"messages', then add these in the secure box.")
         else:
             lines.append(
-                f"{name}: OFF hai (setup ready hai — on karne ke liye bolo "
-                f"'{name} ke messages dekhna').")
+                f"{name}: OFF (setup is ready — to turn it on, say "
+                f"'watch my {name} messages').")
     return " ".join(lines)

@@ -21,7 +21,7 @@ def _api():
         from kaggle.api.kaggle_api_extended import KaggleApi
     except ImportError:
         raise RuntimeError(
-            "kaggle package install nahi hai. Chalao: pip install kaggle"
+            "The kaggle package is not installed. Run: pip install kaggle"
         )
 
     kaggle_dir = Path.home() / ".kaggle"
@@ -33,12 +33,12 @@ def _api():
     )
     if not has_creds:
         raise RuntimeError(
-            "Kaggle login nahi hua. Sabse aasan tareeka:\n"
-            "  Terminal me chalao: kaggle auth login\n"
-            "(browser me Kaggle login hoga, phir token save ho jayega)\n"
-            "Ya kaggle.com -> Settings -> API -> Create New Token, aur\n"
-            "kaggle.json ko ~/.kaggle/ me rakho "
-            "(Windows: C:\\Users\\<tum>\\.kaggle\\kaggle.json)"
+            "Not logged in to Kaggle. Easiest way:\n"
+            "  Run in the terminal: kaggle auth login\n"
+            "(this signs you in to Kaggle in the browser, then saves the token)\n"
+            "Or go to kaggle.com -> Settings -> API -> Create New Token, and\n"
+            "put kaggle.json in ~/.kaggle/ "
+            "(Windows: C:\\Users\\<you>\\.kaggle\\kaggle.json)"
         )
 
     api = KaggleApi()
@@ -46,17 +46,17 @@ def _api():
         api.authenticate()
     except SystemExit:
         raise RuntimeError(
-            "Kaggle authentication fail ho gaya. 'kaggle auth login' dobara "
-            "chalao, ya kaggle.json dobara download karke ~/.kaggle/ me rakho."
+            "Kaggle authentication failed. Run 'kaggle auth login' again, "
+            "or download kaggle.json again and put it in ~/.kaggle/."
         )
     except Exception as e:
-        raise RuntimeError(f"Kaggle authentication fail ho gaya: {e}")
+        raise RuntimeError(f"Kaggle authentication failed: {e}")
     return api
 
 
 def _fmt_competitions(items):
     if not items:
-        return "Koi competition nahi mila."
+        return "No competitions found."
     lines = []
     for c in items[:20]:
         lines.append(
@@ -78,7 +78,7 @@ def kaggle_list_datasets(search: str = "") -> str:
     api = _api()
     items = api.dataset_list(search=search or None)
     if not items:
-        return "Koi dataset nahi mila."
+        return "No datasets found."
     lines = []
     for d in items[:20]:
         lines.append(f"- {d.ref} | {d.title} | downloads: {d.downloadCount}")
@@ -94,7 +94,7 @@ def kaggle_download_competition(competition: str, path: str = "kaggle_data") -> 
     api = _api()
     api.competition_download_files(competition, path=str(dest), quiet=False)
     files = [p.name for p in dest.iterdir()]
-    return f"Download ho gaya: {competition} -> {dest}\nFiles: {', '.join(files)}"
+    return f"Downloaded: {competition} -> {dest}\nFiles: {', '.join(files)}"
 
 
 def kaggle_download_dataset(dataset: str, path: str = "kaggle_data") -> str:
@@ -106,7 +106,7 @@ def kaggle_download_dataset(dataset: str, path: str = "kaggle_data") -> str:
     api = _api()
     api.dataset_download_files(dataset, path=str(dest), unzip=True, quiet=False)
     files = [p.name for p in dest.iterdir()]
-    return f"Download ho gaya: {dataset} -> {dest}\nFiles: {', '.join(files)}"
+    return f"Downloaded: {dataset} -> {dest}\nFiles: {', '.join(files)}"
 
 
 def kaggle_submit(competition: str, file: str, message: str) -> str:
@@ -115,9 +115,9 @@ def kaggle_submit(competition: str, file: str, message: str) -> str:
 
     target = (settings.workspace_dir / file).resolve()
     if not target.is_relative_to(settings.workspace_dir):
-        raise ValueError("Submission file workspace ke andar honi chahiye.")
+        raise ValueError("The submission file must be inside the workspace.")
     if not target.exists():
-        raise FileNotFoundError(f"Submission file nahi mili: {file}")
+        raise FileNotFoundError(f"Submission file not found: {file}")
     api = _api()
     result = api.competition_submit(str(target), message, competition)
-    return f"Submit ho gaya: {competition}\n{result}"
+    return f"Submitted: {competition}\n{result}"

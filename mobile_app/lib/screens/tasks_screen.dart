@@ -63,15 +63,15 @@ class _TasksScreenState extends State<TasksScreen> {
   String _statusLabel(String status) {
     switch (status) {
       case 'done':
-        return 'Ho gaya';
+        return 'Done';
       case 'error':
         return 'Error';
       case 'running':
-        return 'Chal raha hai';
+        return 'Running';
       case 'waiting_approval':
-        return 'Approval ka wait';
+        return 'Waiting for approval';
       case 'stopped':
-        return 'Roka gaya';
+        return 'Stopped';
       default:
         return status;
     }
@@ -93,7 +93,7 @@ class _TasksScreenState extends State<TasksScreen> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: _load,
-                child: const Text('Dobara try karo'),
+                child: const Text('Try again'),
               ),
             ],
           ),
@@ -105,7 +105,7 @@ class _TasksScreenState extends State<TasksScreen> {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'Abhi koi task nahi hai.\nChat me koi kaam bolo — wo yahan dikhega.',
+            'No tasks yet.\nAsk for something in Chat — it will show up here.',
             textAlign: TextAlign.center,
             style: TextStyle(color: LindaTheme.muted),
           ),

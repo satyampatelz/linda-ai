@@ -32,7 +32,7 @@
     <!-- App bar -->
     <header id="appbar">
       <div class="brand">
-        <div class="logo" aria-hidden="true">S</div>
+        <div class="logo" aria-hidden="true">L</div>
         <div class="brand-text">
           <h1>Linda</h1>
         </div>
@@ -98,66 +98,66 @@
         <button id="settingsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
       </div>
       <div class="modal-body">
-        <p class="modal-note">Sab kuch yahin se badlo — koi file edit karne ki zaroorat nahi. Save karte hi bina restart ke lagu ho jayega.</p>
+        <p class="modal-note">Change everything here — no need to edit any file. Applies as soon as you save, no restart needed.</p>
 
         <label class="field">
-          <span class="field-label">Brain — kaunsa model jawab dega?</span>
+          <span class="field-label">Brain — which model answers?</span>
           <select id="setProvider">
-            <option value="ollama">Ollama — laptop ka local model (free, private)</option>
-            <option value="gemini">Gemini — Google free-tier API (zyada smart)</option>
+            <option value="ollama">Ollama — local model on your laptop (free, private)</option>
+            <option value="gemini">Gemini — Google free-tier API (smarter)</option>
           </select>
         </label>
 
         <label class="field">
-          <span class="field-label">Ollama model ka naam</span>
+          <span class="field-label">Ollama model name</span>
           <input id="setOllamaModel" type="text" placeholder="qwen2.5:3b" autocomplete="off">
-          <span class="field-hint">Model pehle download hona chahiye: <code>ollama pull qwen2.5:3b</code></span>
+          <span class="field-hint">The model must be downloaded first: <code>ollama pull qwen2.5:3b</code></span>
         </label>
 
         <label class="field">
-          <span class="field-label">Gemini API key <span class="field-optional">(sirf Gemini brain ke liye)</span></span>
-          <input id="setGeminiKey" type="password" placeholder="Abhi key set nahi hai" autocomplete="off">
-          <span class="field-hint">Free key: <b>aistudio.google.com</b> → Get API key (card nahi lagta). Khaali chhodo toh purani key hi rahegi.</span>
+          <span class="field-label">Gemini API key <span class="field-optional">(only for the Gemini brain)</span></span>
+          <input id="setGeminiKey" type="password" placeholder="No key set yet" autocomplete="off">
+          <span class="field-hint">Free key: <b>aistudio.google.com</b> → Get API key (no card needed). Leave blank to keep the current key.</span>
         </label>
 
         <label class="field">
-          <span class="field-label">Gemini model ka naam</span>
+          <span class="field-label">Gemini model name</span>
           <input id="setGeminiModel" type="text" placeholder="gemini-2.5-flash" autocomplete="off">
         </label>
 
         <label class="field">
           <span class="field-label">Approval mode</span>
           <select id="setApproval">
-            <option value="auto">Auto — jo bolo wo seedha karega (default)</option>
-            <option value="ask">Ask — push/submit se pehle ek click me poochhega</option>
+            <option value="auto">Auto — does what you ask right away (default)</option>
+            <option value="ask">Ask — asks with one click before push/submit</option>
           </select>
         </label>
 
         <label class="field">
           <span class="field-label">Browser</span>
           <select id="setBrowser">
-            <option value="visible">Visible — Chrome screen pe dikhega (demo ke liye best)</option>
-            <option value="headless">Headless — background me chalega</option>
+            <option value="visible">Visible — you watch Chrome on screen (best for demos)</option>
+            <option value="headless">Headless — runs in the background</option>
           </select>
         </label>
 
         <label class="field">
           <span class="field-label">Max steps per task (1–50)</span>
           <input id="setMaxSteps" type="number" min="1" max="50" step="1" value="15">
-          <span class="field-hint">Ek task me agent zyada se zyada kitne steps le sakta hai.</span>
+          <span class="field-hint">The most steps the agent can take in one task.</span>
         </label>
 
         <label class="field">
-          <span class="field-label">Server API token <span class="field-optional">(sirf cloud server ke liye)</span></span>
-          <input id="setApiToken" type="password" placeholder="Laptop server pe zaroorat nahi" autocomplete="off">
-          <span class="field-hint">Ye token sirf is browser me save hota hai — server ko settings ke saath nahi bheja jata. Cloud server ke .env me jo API_TOKEN set hai, wahi daalo.</span>
+          <span class="field-label">Server API token <span class="field-optional">(cloud server only)</span></span>
+          <input id="setApiToken" type="password" placeholder="Not needed for a laptop server" autocomplete="off">
+          <span class="field-hint">This token is saved in this browser only — it is never sent to the server with settings. Enter the API_TOKEN set in the cloud server's .env.</span>
         </label>
 
         <label class="field field-check">
-          <span class="field-label">Voice — jawab sunai de?</span>
+          <span class="field-label">Voice — hear the replies?</span>
           <span class="check-row">
             <input id="setAutoSpeak" type="checkbox">
-            <span class="field-hint">Auto-speak: har agent reply apne aap bol ke sunayega. Band ho toh bhi har agent message ke speaker button se kabhi bhi sun sakte ho. Ye setting sirf is browser me save hoti hai.</span>
+            <span class="field-hint">Auto-speak: reads every agent reply aloud automatically. Even with it off, you can still listen anytime with the speaker button on any agent message. This setting is saved in this browser only.</span>
           </span>
         </label>
 
@@ -173,17 +173,17 @@
   <div id="healthModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="healthTitle">
     <div class="modal-card">
       <div class="modal-header">
-        <h2 id="healthTitle">Status — sab theek hai?</h2>
+        <h2 id="healthTitle">Status — is everything OK?</h2>
         <button id="healthClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
       </div>
       <div class="modal-body">
         <div id="healthList">
-          <p class="steps-empty">Check ho raha hai…</p>
+          <p class="steps-empty">Checking…</p>
         </div>
         <div id="healthMsg" class="form-msg hidden"></div>
       </div>
       <div class="modal-footer">
-        <button id="healthRefresh" class="btn btn-yes">Dobara check karo</button>
+        <button id="healthRefresh" class="btn btn-yes">Check again</button>
       </div>
     </div>
   </div>

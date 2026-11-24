@@ -28,7 +28,7 @@ class BrainError(Exception):
     """Raised when the model cannot be reached or refuses the request.
 
     `transient=True` means "worth retrying once" (network/timeout/5xx/429).
-    The message is always user-facing Hinglish — never a raw traceback.
+    The message is always user-facing English — never a raw traceback.
     """
 
     def __init__(self, message: str, transient: bool = False):
@@ -84,16 +84,16 @@ def _chat_ollama(messages: list, temperature: float, timeout: int) -> str:
             )
     except httpx.ConnectError:
         raise BrainError(
-            f"Ollama se connect nahi ho paya ({settings.ollama_url}). "
-            "Ollama chal raha hai? Ollama app kholo ya terminal me 'ollama serve' chalao, "
-            f"phir 'ollama pull {settings.ollama_model}' se model download karo. "
-            "Ya Settings (⚙️) me Gemini brain chuno.",
+            f"Couldn't connect to Ollama ({settings.ollama_url}). "
+            "Is Ollama running? Open the Ollama app or run 'ollama serve' in the terminal, "
+            f"then download the model with 'ollama pull {settings.ollama_model}'. "
+            "Or pick the Gemini brain in Settings (⚙️).",
             transient=True,
         )
     except httpx.TimeoutException:
         raise BrainError(
-            "Ollama ne jawab dene me bahut der kar di (timeout). "
-            "Model pehli baar load ho raha ho toh thoda wait karke dobara try karo.",
+            "Ollama took too long to reply (timeout). "
+            "If the model is loading for the first time, wait a bit and try again.",
             transient=True,
         )
     except BrainError:
@@ -101,25 +101,25 @@ def _chat_ollama(messages: list, temperature: float, timeout: int) -> str:
     except Exception as e:  # noqa: BLE001 — any transport/config error, cleanly
         logger.exception("Ollama transport error")
         raise BrainError(
-            "Ollama se baat karte waqt error aaya. Ollama chal raha hai? "
-            "Header me Status dabake check karo.",
+            "An error occurred while talking to Ollama. Is Ollama running? "
+            "Check by tapping Status in the header.",
             transient=True,
         )
 
     if resp.status_code == 404:
         raise BrainError(
-            f"Model '{settings.ollama_model}' Ollama me nahi mila. "
-            f"Terminal me ye chalao: ollama pull {settings.ollama_model}"
+            f"Model '{settings.ollama_model}' not found in Ollama. "
+            f"Run this in the terminal: ollama pull {settings.ollama_model}"
         )
     if resp.status_code >= 500:
         raise BrainError(
-            f"Ollama server error ({resp.status_code}). Ollama restart karke "
-            "dobara try karo.",
+            f"Ollama server error ({resp.status_code}). Restart Ollama and "
+            "try again.",
             transient=True,
         )
     if resp.status_code != 200:
         raise BrainError(
-            f"Ollama error {resp.status_code}. Ollama restart karke dobara try karo."
+            f"Ollama error {resp.status_code}. Restart Ollama and try again."
         )
 
     try:
@@ -127,7 +127,7 @@ def _chat_ollama(messages: list, temperature: float, timeout: int) -> str:
     except (KeyError, ValueError):
         logger.warning("Unparseable Ollama response: %s", resp.text[:500])
         raise BrainError(
-            "Ollama ka jawab samajh nahi aaya. Ollama restart karke dobara try karo."
+            "Couldn't understand Ollama's reply. Restart Ollama and try again."
         )
 
 
@@ -157,9 +157,9 @@ def _to_gemini_contents(messages: list):
 def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
     if not settings.gemini_api_key:
         raise BrainError(
-            "Gemini API key set nahi hai. App me Settings (⚙️) kholo, Gemini key "
-            "daalo — free key aistudio.google.com se milti hai (Google account "
-            "chahiye, card nahi). Ya Settings me Ollama brain chuno."
+            "Gemini API key not set. Open Settings (⚙️) in the app and add a "
+            "Gemini key — a free key is available at aistudio.google.com "
+            "(needs a Google account, no card). Or pick the Ollama brain in Settings."
         )
 
     system_text, contents = _to_gemini_contents(messages)
@@ -180,12 +180,12 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
             )
     except httpx.ConnectError:
         raise BrainError(
-            "Gemini API se connect nahi ho paya. Internet check karo.",
+            "Couldn't connect to the Gemini API. Check your internet.",
             transient=True,
         )
     except httpx.TimeoutException:
         raise BrainError(
-            "Gemini API ne jawab dene me bahut der kar di (timeout).",
+            "The Gemini API took too long to reply (timeout).",
             transient=True,
         )
     except BrainError:
@@ -193,37 +193,38 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
     except Exception as e:  # noqa: BLE001 — any transport/config error, cleanly
         logger.exception("Gemini transport error")
         raise BrainError(
-            "Gemini API se baat karte waqt error aaya. Internet check karke "
-            "dobara try karo.",
+            "An error occurred while talking to the Gemini API. Check your "
+            "internet and try again.",
             transient=True,
         )
 
     if resp.status_code == 400:
         raise BrainError(
-            f"Gemini ne request reject kar di (400). Ho sakta hai model id "
-            f"'{settings.gemini_model}' ab free tier pe na ho — Settings (⚙️) me "
-            "Gemini model badal ke gemini-3.8-flash ya gemini-3.5-flash-lite try karo."
+            f"Gemini rejected the request (400). The model id "
+            f"'{settings.gemini_model}' may no longer be on the free tier — in "
+            "Settings (⚙️), change the Gemini model and try gemini-3.8-flash "
+            "or gemini-3.5-flash-lite."
         )
     if resp.status_code in (401, 403):
         raise BrainError(
-            "Gemini key galat lag rahi hai (auth fail). Settings (⚙️) me sahi "
-            "key daalo — free key aistudio.google.com se milti hai."
+            "The Gemini key looks wrong (auth failed). Enter the correct key "
+            "in Settings (⚙️) — a free key is available at aistudio.google.com."
         )
     if resp.status_code == 429:
         raise BrainError(
-            "Gemini free-tier quota khatam ho gaya (rate limit). Thodi der baad "
-            "try karo, ya Settings (⚙️) me Ollama brain chuno.",
+            "Gemini free-tier quota is used up (rate limit). Try again in a "
+            "little while, or pick the Ollama brain in Settings (⚙️).",
             transient=True,
         )
     if resp.status_code >= 500:
         raise BrainError(
-            f"Gemini server error ({resp.status_code}). Thodi der baad dobara try karo.",
+            f"Gemini server error ({resp.status_code}). Try again in a little while.",
             transient=True,
         )
     if resp.status_code != 200:
         logger.warning("Gemini unexpected status %s: %s", resp.status_code, resp.text[:300])
         raise BrainError(
-            f"Gemini error {resp.status_code}. Thodi der baad dobara try karo."
+            f"Gemini error {resp.status_code}. Try again in a little while."
         )
 
     try:
@@ -231,6 +232,6 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
         return candidates[0]["content"]["parts"][0]["text"]
     except (KeyError, IndexError, ValueError):
         raise BrainError(
-            "Gemini ka jawab khaali tha (shayad safety filter ne roka). "
-            "Task ko dobara, thoda alag wording me try karo."
+            "Gemini's reply was empty (maybe the safety filter blocked it). "
+            "Try the task again with slightly different wording."
         )

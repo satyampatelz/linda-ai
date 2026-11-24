@@ -1,5 +1,5 @@
-# Linda server URL — launcher (Linda.bat) isi ko kholta hai.
+# Linda server URL — the launcher (Linda.bat) opens this one.
 # Laptop (default): http://127.0.0.1:8000
-# Cloud (Oracle VM): yahan apne VM ka URL likho, jaise https://linda.example.com
-# Sirf ek line (neeche wali) badlo — # wali lines comment hain, ignore hoti hain.
+# Cloud (Oracle VM): write your VM's URL here, e.g. https://linda.example.com
+# Change only one line (the one below) — lines starting with # are comments and are ignored.
 http://127.0.0.1:8000

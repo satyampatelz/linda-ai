@@ -33,8 +33,8 @@ def _format_message(msg: dict, include_body: bool = True) -> str:
     if include_body:
         body = (msg.get("body") or msg.get("snippet") or "").strip()
         if len(body) > MAX_BODY_CHARS:
-            body = body[:MAX_BODY_CHARS] + "… (aage ka hissa cut hai)"
-        lines.append(body if body else "(khali email)")
+            body = body[:MAX_BODY_CHARS] + "… (rest cut off)"
+        lines.append(body if body else "(empty email)")
     else:
         lines.append(msg.get("snippet", ""))
     return "\n".join(lines)
@@ -55,9 +55,9 @@ def read_gmail(query: str = "", max_results: int = 5) -> str:
         logger.warning("read_gmail failed: %s", e)
         return str(e)
     if not messages:
-        return ("Koi email nahi mila"
-                + (f" — query thi: '{query}'." if query else "."))
-    parts = [f"{len(messages)} email mile:\n"]
+        return ("No emails found"
+                + (f" — query was: '{query}'." if query else "."))
+    parts = [f"{len(messages)} emails found:\n"]
     for i, msg in enumerate(messages, 1):
         parts.append(f"--- Email {i} ---\n{_format_message(msg)}")
     return "\n\n".join(parts)
@@ -86,15 +86,15 @@ def find_otp(sender: str, minutes: int = 10) -> str:
     found = gmail_otp.find_otp_code(service, sender, minutes=minutes)
     if not found:
         return (
-            f"Pichhle {minutes} minute me '{sender}' se OTP wala koi email "
-            f"nahi mila — ye SMS OTP ho sakta hai (SMS Gmail me nahi aata). "
-            f"User se chat me code maango: finish answer me bas ye likho — "
-            f"'SMS pe aaya OTP bhejo' — browser band mat karo, aur jab code "
-            f"aaye toh browser_fill_otp me code de ke khud bhar do. (Ye bhi "
-            f"check karo ki OTP wala email isi Gmail account pe aaya hai ya "
-            f"kisi aur pe.)"
+            f"No OTP email from '{sender}' in the last {minutes} minutes — "
+            f"this may be an SMS OTP (SMS doesn't arrive in Gmail). Ask the "
+            f"user for the code in chat: in your finish answer, ask for the "
+            f"SMS OTP in the user's language — don't close the browser, and "
+            f"when the code arrives, fill it yourself with browser_fill_otp. "
+            f"(Also check whether the OTP email went to this Gmail account "
+            f"or a different one.)"
         )
     return (
-        f"OTP mil gaya: {found['code']} "
+        f"OTP found: {found['code']} "
         f"(email: '{found['subject']}' — {found['sender']})"
     )

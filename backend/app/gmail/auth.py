@@ -26,25 +26,25 @@ def main() -> int:
 
     secret = _find_client_secret()
     if secret is None:
-        print("client_secret.json nahi mila!")
+        print("client_secret.json not found!")
         print()
-        print("Pehle Google Cloud Console se client_secret.json download")
-        print("karke project folder me rakho. Steps GMAIL_SETUP.md me hain.")
-        print("Dekhi gayi jagah:")
+        print("First download client_secret.json from the Google Cloud")
+        print("Console and put it in the project folder. Steps are in")
+        print("GMAIL_SETUP.md. Places checked:")
         for path in CLIENT_SECRET_PATHS:
             print(f"  - {path}")
         return 1
 
-    print(f"client_secret.json mil gaya: {secret}")
-    print("Browser me Google ka consent screen khul raha hai...")
-    print("(Sign in karo, phir Allow dabao — token data/token.json me save hoga.)")
+    print(f"Found client_secret.json: {secret}")
+    print("Opening Google's consent screen in the browser...")
+    print("(Sign in, then click Allow — the token will be saved to data/token.json.)")
     flow = InstalledAppFlow.from_client_secrets_file(str(secret), SCOPES)
     creds = flow.run_local_server(port=0)
     TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     TOKEN_PATH.write_text(creds.to_json())
     print()
-    print(f"Ho gaya! Token save ho gaya: {TOKEN_PATH}")
-    print("Ab Linda se chat me bolo: 'mere Gmail me kya aaya hai?'")
+    print(f"Done! Token saved: {TOKEN_PATH}")
+    print("Now ask Linda in chat: 'what's new in my Gmail?'")
     return 0
 
 

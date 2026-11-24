@@ -102,7 +102,7 @@ TOOL_SPECS = [
     # Memory
     {"name": "memory_remember", "fn": memory.remember,
      "desc": 'Save a fact for later. args: {"key": "github_username", "value": "..."}'},
-    {"name": "memory_recall", "fn": lambda key: memory.recall(key) or "(yaad nahi hai)",
+    {"name": "memory_recall", "fn": lambda key: memory.recall(key) or "(not remembered)",
      "desc": 'Recall a saved fact. args: {"key": "github_username"}'},
     # Messaging — WhatsApp / Instagram auto-reply, controlled from chat
     {"name": "set_messaging", "fn": messaging_tool.set_messaging,
@@ -133,7 +133,7 @@ RULES
 - For multi-part tasks, break them into steps and do them in order.
 - File paths for files_write/files_read/run_python are relative to the workspace folder.
 - For GitHub: write the code first, then github_init, github_add_commit, github_remote_add (only if the user gave a repo URL), then github_push.
-- For browser tasks: browser_open, then browser_read to see the page, then click/type based on what you actually see. If a task names a site (e.g. "Internshala check karo"), first read site-profiles.yaml with files_read — it has plain-word notes (login URL, where things live) for known sites. If a CAPTCHA appears, stop and tell the user in your finish answer — they solve it in the visible browser, then tell you to continue. OTPs are different: EMAIL OTPs — read the code from Gmail (find_otp) and fill it yourself (browser_fill_otp) — never ask the user for an email OTP. SMS OTPs — Gmail me nahi milega, isliye user se chat me code maango (finish answer me bas: "SMS pe aaya OTP bhejo"), browser band mat karo (OTP wala page khula rahega), aur jab user code bheje toh browser_fill_otp me code de ke khud bhar do, phir task continue karo. Code ko kabhi apne jawab me dobara mat likho, aur kabhi memory me save mat karo.
+- For browser tasks: browser_open, then browser_read to see the page, then click/type based on what you actually see. If a task names a site (e.g. "Internshala check karo"), first read site-profiles.yaml with files_read — it has plain-word notes (login URL, where things live) for known sites. If a CAPTCHA appears, stop and tell the user in your finish answer — they solve it in the visible browser, then tell you to continue. OTPs are different: EMAIL OTPs — read the code from Gmail (find_otp) and fill it yourself (browser_fill_otp) — never ask the user for an email OTP. SMS OTPs — Gmail can't provide those, so ask the user for the code in chat (in your finish answer, ask for the SMS OTP in whatever language they are chatting in), don't close the browser (the OTP page stays open), and when the user sends the code, fill it yourself with browser_fill_otp, then continue the task. Never repeat the code in your answer, and never save it to memory.
 - If the user only asked a question (no task), answer directly with a finish action — no tools needed.
 - Keep answers short.
 - Reply in the same language and script the user used in their message — from their very first message, no matter what language they start in; default to English when unclear.
@@ -149,7 +149,7 @@ MESSAGING (WhatsApp / Instagram auto-reply)
 GMAIL (read-only — you read mail, never send/delete/modify)
 - The user asks things like: "mere Gmail me kya aaya hai?", "Internshala ka mail dikhao", "show me my recent emails", "kya koi naya mail hai?". Call read_gmail (empty query = newest inbox mail; "from:internshala" narrows to a sender). Summarize what matters — sender, subject, the point of the mail.
 - If read_gmail says Gmail is not set up, tell the user once in plain words (one-time setup: GMAIL_SETUP.md, run "python -m backend.app.gmail.auth") and stop — do not keep asking.
-- OTP: when a site asks for an OTP during a browser task, FIRST check Gmail — call find_otp with the site name ("Internshala"), then browser_fill_otp to fill it. EMAIL OTPs are fully automatic this way — never ask the user for one. If Gmail me koi OTP email nahi mila, it is probably an SMS OTP: finish with ONE short message asking for it ("SMS pe aaya OTP bhejo") and do NOT close the browser — the OTP page stays open in the persistent browser session. When the user replies with the code, fill it yourself with browser_fill_otp and the code (args: {{"code": "482916"}}), then continue the task (click Verify/Submit). If the user's message is just a 4–8 digit code, treat it as the SMS OTP you asked for: check the page with browser_read, fill the code, continue. NEVER repeat the code in your answer, never save it with memory_remember, never write it to a file — use it once for the fill and forget it.
+- OTP: when a site asks for an OTP during a browser task, FIRST check Gmail — call find_otp with the site name ("Internshala"), then browser_fill_otp to fill it. EMAIL OTPs are fully automatic this way — never ask the user for one. If no OTP email arrived in Gmail, it is probably an SMS OTP: finish with ONE short message asking for it (ask for the SMS OTP in whatever language the user is chatting in) and do NOT close the browser — the OTP page stays open in the persistent browser session. When the user replies with the code, fill it yourself with browser_fill_otp and the code (args: {{"code": "482916"}}), then continue the task (click Verify/Submit). If the user's message is just a 4–8 digit code, treat it as the SMS OTP you asked for: check the page with browser_read, fill the code, continue. NEVER repeat the code in your answer, never save it with memory_remember, never write it to a file — use it once for the fill and forget it.
 
 BROWSER — FORMS + GOOGLE SIGN-IN
 - The browser keeps a persistent profile: once the user has signed in to Google once in the agent's browser, "Sign in with Google" / "Login with Google" buttons on sites work without re-typing anything — just click them. If Google asks to sign in again, tell the user once to sign in himself in the visible browser (first time only), then continue.
@@ -361,7 +361,7 @@ def run_task(task_id: str, user_message: str):
     The loop can never hang: every brain call has a timeout, every step is
     bounded by MAX_AGENT_STEPS, a Stop request is honoured at the next
     checkpoint, and any unexpected error finishes the task with a clean
-    Hinglish message (full details go to the server log only).
+    English message (full details go to the server log only).
     """
     try:
         _run_task_inner(task_id, user_message)
@@ -371,8 +371,8 @@ def run_task(task_id: str, user_message: str):
         if task and task["status"] in ("running", "waiting_approval"):
             task_store.finish(
                 task_id,
-                error="Kuch unexpected ho gaya — task ruk gaya. "
-                      "Dobara try karo; agar baar-baar ho toh server restart karo.",
+                error="Something unexpected happened — the task stopped. "
+                      "Try again; if it keeps happening, restart the server.",
             )
             # The task message is logged to the DB — redact any OTP code
             # the user may have typed in it.
@@ -384,7 +384,7 @@ def _stop_now(task_id: str, user_message: str) -> bool:
     if the loop should exit."""
     if not task_store.stop_requested(task_id):
         return False
-    msg = "Task rok diya gaya — ab tak ke steps upar dikh rahe hain."
+    msg = "Task stopped — the steps so far are shown above."
     task_store.stop(task_id, msg)
     memory.log_task(task_id, redact_otp_text(user_message), msg, "stopped")
     return True
@@ -413,9 +413,9 @@ def _run_task_inner(task_id: str, user_message: str):
             logger.exception("Brain call failed in task %s", task_id)
             task_store.finish(
                 task_id,
-                error="Model se baat karte waqt achanak error aaya. "
-                      "Dobara try karo; agar baar-baar ho toh Status panel me "
-                      "brain check karo.",
+                error="A sudden error occurred while talking to the model. "
+                      "Try again; if it keeps happening, check the brain in "
+                      "the Status panel.",
             )
             memory.log_task(task_id, log_message, "", "error")
             return
@@ -434,7 +434,7 @@ def _run_task_inner(task_id: str, user_message: str):
             messages.append({"role": "assistant", "content": raw})
             messages.append({
                 "role": "user",
-                "content": ("Observation: tumhara jawab valid JSON nahi tha. "
+                "content": ("Observation: your reply was not valid JSON. "
                             "Reply with ONLY a JSON object like "
                             '{"thought": "...", "action": "tool_name", "args": {...}} '
                             "or {\"action\": \"finish\", \"answer\": \"...\"}."),
@@ -447,7 +447,7 @@ def _run_task_inner(task_id: str, user_message: str):
         args = parsed.get("args") or {}
 
         if action == "finish":
-            answer = parsed.get("answer", "Ho gaya.")
+            answer = parsed.get("answer", "Done.")
             task_store.add_step(task_id, {
                 "n": step_no, "thought": thought,
                 "action": "finish", "args": {}, "result": answer,
@@ -481,8 +481,8 @@ def _run_task_inner(task_id: str, user_message: str):
                 return
             if not allowed:
                 observation = (
-                    "User ne is action ko approve nahi kiya. "
-                    "Bina iske aage badho, ya finish me user ko batao."
+                    "The user did not approve this action. "
+                    "Continue without it, or tell the user in your finish answer."
                 )
                 task_store.add_step(task_id, {
                     "n": step_no, "thought": thought, "action": action,
@@ -499,7 +499,7 @@ def _run_task_inner(task_id: str, user_message: str):
         except TypeError as e:
             logger.warning("Bad tool call %s %s: %s",
                            action, _redact_args(action, args), e)
-            result = f"Tool call galat tha ({action}). Args dobara check karo."
+            result = f"Tool call was wrong ({action}). Check the args again."
         except Exception as e:  # noqa: BLE001 — tool errors become observations
             logger.warning("Tool %s failed: %s", action, e)
             result = f"Tool error ({action}): {e}"
@@ -518,8 +518,8 @@ def _run_task_inner(task_id: str, user_message: str):
 
     # Ran out of steps.
     answer = (
-        f"Task {settings.max_steps} steps me poora nahi hua. "
-        "Ab tak ke steps upar dikh rahe hain — mujhe 'aage badho' bolo toh continue karunga."
+        f"The task didn't finish in {settings.max_steps} steps. "
+        "The steps so far are shown above — tell me 'continue' and I'll keep going."
     )
     task_store.finish(task_id, result=answer)
     memory.log_task(task_id, log_message, answer, "stopped")

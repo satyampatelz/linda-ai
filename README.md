@@ -52,4 +52,6 @@ For a smarter free brain, add a Gemini API key in **Settings** (free from [aistu
 
 ## Version
 
+**v0.10.1** (24 Nov 2026) — Language release: everything is now in clean English except the chat conversation itself (docs, scripts, comments, all user-visible app strings). Chat stays multilingual — Linda adapts to whatever language you speak in chat. No functionality changes.
+
 **v0.10.0** (24 Nov 2026) — Full rebrand: Satyam is now **Linda** — new name, new 3D app icon (teal-glass L, gold rings) everywhere. All v0.9.1 features unchanged.

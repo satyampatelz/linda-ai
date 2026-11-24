@@ -1,73 +1,73 @@
 #!/usr/bin/env bash
 # Linda v0.2 — Linux/macOS/WSL one-time setup.
 # Run once: bash setup.sh — then start with: bash run.sh
-# Har step pe Hinglish status dikhega; kuch gadbad ho toh wahi ruk jayega.
+# Each step shows an English status message; if something goes wrong it stops right there.
 cd "$(dirname "$0")"
 
-fail() { echo "  X $1"; echo "Setup ruk gaya."; exit 1; }
+fail() { echo "  X $1"; echo "Setup stopped."; exit 1; }
 
 echo "============================================"
-echo "  Linda setup — ek baar ka kaam"
+echo "  Linda setup — a one-time job"
 echo "============================================"
 echo
 
-echo "[1/6] Python 3.12+ check kar raha hoon..."
-command -v python3 >/dev/null 2>&1 || fail "Python 3 nahi mila. Pehle Python 3.12 install karo (python.org ya system package manager se), phir setup.sh dobara chalao."
+echo "[1/6] Checking Python 3.12+..."
+command -v python3 >/dev/null 2>&1 || fail "Python 3 not found. Install Python 3.12 first (from python.org or your system package manager), then run setup.sh again."
 python3 -c "import sys; sys.exit(0 if sys.version_info>=(3,12) else 1)" 2>/dev/null \
-  || fail "Python 3.12 ya usse naya chahiye — tumhare paas purana version hai. Python 3.12 install karke dobara chalao."
+  || fail "Python 3.12 or newer is needed — you have an older version. Install Python 3.12 and run again."
 echo "  OK $(python3 --version)"
 
 echo
-echo "[2/6] Git check kar raha hoon..."
+echo "[2/6] Checking Git..."
 if command -v git >/dev/null 2>&1; then
   echo "  OK $(git --version)"
 else
-  echo "  ! Git nahi mila — GitHub demo ke liye chahiye hoga."
-  echo "    (Ubuntu/Debian: sudo apt install git). Setup aage badh raha hai."
+  echo "  ! Git not found — you'll need it for the GitHub demo."
+  echo "    (Ubuntu/Debian: sudo apt install git). Setup is continuing."
 fi
 
 echo
-echo "[3/6] Virtual environment bana raha hoon..."
+echo "[3/6] Creating the virtual environment..."
 if [ ! -d .venv ]; then
-  python3 -m venv .venv || fail "venv ban nahi paya. (Ubuntu/Debian: sudo apt install python3.12-venv)"
+  python3 -m venv .venv || fail "Couldn't create the venv. (Ubuntu/Debian: sudo apt install python3.12-venv)"
 fi
 # shellcheck disable=SC1091
 . .venv/bin/activate
-echo "  OK .venv ready hai."
+echo "  OK .venv is ready."
 
 echo
-echo "[4/6] Python packages install ho rahe hain (thoda time lagega)..."
+echo "[4/6] Installing Python packages (this takes a little while)..."
 pip install --upgrade pip >/dev/null 2>&1
-pip install -r requirements.txt || fail "pip install fail ho gaya. Internet check karke setup.sh dobara chalao."
-echo "  OK packages install ho gaye."
+pip install -r requirements.txt || fail "pip install failed. Check your internet and run setup.sh again."
+echo "  OK packages installed."
 
 echo
-echo "[5/6] Playwright Chromium install ho raha hai..."
+echo "[5/6] Installing Playwright Chromium..."
 if playwright install chromium; then
-  echo "  OK Chromium ready hai."
+  echo "  OK Chromium is ready."
 else
-  echo "  ! Chromium install nahi ho paya — browser wala kaam nahi chalega."
-  echo "    Baad me venv active karke 'playwright install chromium' dobara chalana."
-  echo "    Status panel me ye check dikh jayega. Setup aage badh raha hai."
+  echo "  ! Chromium install failed — browser tasks won't work."
+  echo "    Later, activate the venv and run 'playwright install chromium' again."
+  echo "    This check will show up in the Status panel. Setup is continuing."
 fi
 
 echo
 echo "[6/6] .env file..."
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "  OK .env ban gaya (default settings ke saath)."
+  echo "  OK .env created (with default settings)."
 else
-  echo "  OK .env pehle se hai — chheda nahi."
+  echo "  OK .env already exists — left untouched."
 fi
 
 echo
 echo "============================================"
-echo "  Setup ho gaya!"
+echo "  Setup done!"
 echo "============================================"
-echo "  Ollama abhi tak install nahi kiya toh:"
-echo "    1. ollama.com se Ollama install karo"
-echo "    2. Terminal me chalao: ollama pull qwen2.5:3b"
-echo "  (Ya Settings me Gemini free key use kar sakte ho — card nahi lagta.)"
+echo "  If you haven't installed Ollama yet:"
+echo "    1. Install Ollama from ollama.com"
+echo "    2. In a terminal, run: ollama pull qwen2.5:3b"
+echo "  (Or use a Gemini free key in Settings — no card needed.)"
 echo
-echo "  Ab bash run.sh chalao, phir browser me kholo:"
+echo "  Now run bash run.sh, then open in your browser:"
 echo "    http://127.0.0.1:8000"

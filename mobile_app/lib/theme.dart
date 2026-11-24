@@ -242,7 +242,7 @@ class LindaIcon extends StatelessWidget {
   }
 }
 
-/// The gradient "S" logo mark.
+/// The gradient "L" logo mark.
 class LindaLogo extends StatelessWidget {
   const LindaLogo({this.size = 38, super.key});
 
@@ -266,7 +266,7 @@ class LindaLogo extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Text(
-        'S',
+        'L',
         style: TextStyle(
           color: Colors.white,
           fontSize: size * 0.58,

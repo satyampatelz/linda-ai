@@ -23,8 +23,8 @@ def _run_git(repo_path, args, timeout=180):
     )
     out = (result.stdout + result.stderr).strip()
     if result.returncode != 0:
-        raise RuntimeError(f"git {' '.join(args)} fail ho gaya:\n{out}")
-    return out or "(koi output nahi)"
+        raise RuntimeError(f"git {' '.join(args)} failed:\n{out}")
+    return out or "(no output)"
 
 
 def github_init(path: str) -> str:
@@ -32,7 +32,7 @@ def github_init(path: str) -> str:
     repo = Path(path)
     repo.mkdir(parents=True, exist_ok=True)
     out = _run_git(repo, ["init", "-b", "main"])
-    return f"{out}\nRepo ban gaya: {repo}"
+    return f"{out}\nRepo created: {repo}"
 
 
 def github_status(path: str) -> str:
@@ -49,10 +49,10 @@ def github_remote_add(path: str, url: str, name: str = "origin") -> str:
         text=True,
     )
     if result.returncode != 0:
-        # Remote pehle se hai — URL update kar do.
+        # Remote already exists — just update its URL.
         _run_git(path, ["remote", "set-url", name, url])
-        return f"Remote '{name}' ka URL update kar diya: {url}"
-    return f"Remote '{name}' add ho gaya: {url}"
+        return f"Updated remote '{name}' URL: {url}"
+    return f"Added remote '{name}': {url}"
 
 
 def github_add_commit(path: str, message: str) -> str:
@@ -67,8 +67,8 @@ def github_add_commit(path: str, message: str) -> str:
     out = (result.stdout + result.stderr).strip()
     if result.returncode != 0:
         if "nothing to commit" in out:
-            return "Commit karne ko kuch nahi tha — sab kuch pehle se committed hai."
-        raise RuntimeError(f"git commit fail ho gaya:\n{out}")
+            return "Nothing to commit — everything is already committed."
+        raise RuntimeError(f"git commit failed:\n{out}")
     return out
 
 
@@ -94,5 +94,5 @@ def github_clone(url: str, path: str) -> str:
     )
     out = (result.stdout + result.stderr).strip()
     if result.returncode != 0:
-        raise RuntimeError(f"git clone fail ho gaya:\n{out}")
-    return f"Clone ho gaya: {url} -> {dest}\n{out}"
+        raise RuntimeError(f"git clone failed:\n{out}")
+    return f"Cloned: {url} -> {dest}\n{out}"

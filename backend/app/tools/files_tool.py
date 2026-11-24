@@ -18,7 +18,7 @@ def _resolve(rel_path: str) -> Path:
     target = (base / rel_path).resolve()
     if not target.is_relative_to(base):
         raise ValueError(
-            f"Path '{rel_path}' workspace ke bahar hai. "
+            f"Path '{rel_path}' is outside the workspace. "
             f"Allowed folder: {base}"
         )
     return target
@@ -47,12 +47,12 @@ def files_read(path: str) -> str:
     """Read a text file from the workspace."""
     target = _resolve(path)
     if not target.exists():
-        raise FileNotFoundError(f"File nahi mili: {path}")
+        raise FileNotFoundError(f"File not found: {path}")
     if target.is_dir():
-        raise ValueError(f"'{path}' ek folder hai, file nahi. files_list use karo.")
+        raise ValueError(f"'{path}' is a folder, not a file. Use files_list.")
     text = target.read_text(encoding="utf-8", errors="replace")
     if len(text) > MAX_READ_CHARS:
-        text = text[:MAX_READ_CHARS] + "\n... (file bahut lambi hai, yahan cut ki gayi)"
+        text = text[:MAX_READ_CHARS] + "\n... (file is too long, cut off here)"
     return text
 
 
@@ -68,16 +68,16 @@ def files_mkdir(path: str) -> str:
     """Create a folder (and parents) in the workspace."""
     target = _resolve(path)
     target.mkdir(parents=True, exist_ok=True)
-    return f"Folder ban gaya: {path}"
+    return f"Folder created: {path}"
 
 
 def files_delete(path: str) -> str:
     """Delete a file or folder (with contents) from the workspace."""
     target = _resolve(path)
     if not target.exists():
-        return f"Pehle se hi nahi hai: {path}"
+        return f"Doesn't exist: {path}"
     if target.is_dir():
         shutil.rmtree(target)
-        return f"Folder delete kar diya: {path}"
+        return f"Folder deleted: {path}"
     target.unlink()
-    return f"File delete kar di: {path}"
+    return f"File deleted: {path}"

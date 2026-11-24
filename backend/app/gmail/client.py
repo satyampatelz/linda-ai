@@ -9,7 +9,7 @@ Files:
 
 Nothing in this module ever launches a browser on its own: if no valid
 token exists, get_service() raises GmailNotConfigured with a clear
-Hinglish message pointing at GMAIL_SETUP.md. The agent loop turns that
+English message pointing at GMAIL_SETUP.md. The agent loop turns that
 into a chat reply — the user then runs the one-time auth himself.
 """
 import base64
@@ -33,11 +33,11 @@ CLIENT_SECRET_PATHS = [
 TOKEN_PATH = settings.data_dir / "token.json"
 
 SETUP_HINT = (
-    "Gmail set up nahi hai. Ek baar ye karna hoga: Google Cloud project "
-    "banao, Gmail API enable karo, client_secret.json download karke "
-    "project folder me rakho, phir terminal me chalao: "
-    "python -m backend.app.gmail.auth — Google ka consent screen khulega, "
-    "ek baar Allow karo, bas. Steps GMAIL_SETUP.md me hain."
+    "Gmail isn't set up. You'll need to do this once: create a Google "
+    "Cloud project, enable the Gmail API, download client_secret.json "
+    "into the project folder, then run in the terminal: "
+    "python -m backend.app.gmail.auth — Google's consent screen will "
+    "open, click Allow once, that's it. Steps are in GMAIL_SETUP.md."
 )
 
 
@@ -74,7 +74,7 @@ def get_credentials():
     try:
         creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
     except Exception as e:  # noqa: BLE001 — corrupt token file
-        logger.warning("token.json padh nahi paya: %s", e)
+        logger.warning("Couldn't read token.json: %s", e)
         return None
     if creds.valid:
         return creds
@@ -82,7 +82,7 @@ def get_credentials():
         try:
             creds.refresh(Request())
         except Exception as e:  # noqa: BLE001 — refresh can fail
-            logger.warning("Gmail token refresh fail hua: %s", e)
+            logger.warning("Gmail token refresh failed: %s", e)
             return None
         TOKEN_PATH.write_text(creds.to_json())
         return creds
@@ -186,7 +186,7 @@ def search_messages(service, query: str, max_results: int = 5) -> list:
             ).execute()
         )
     except Exception as e:  # noqa: BLE001 — API errors become a clear message
-        raise RuntimeError(f"Gmail search fail ho gaya: {e}")
+        raise RuntimeError(f"Gmail search failed: {e}")
     messages = []
     for item in resp.get("messages", []) or []:
         try:
@@ -196,7 +196,7 @@ def search_messages(service, query: str, max_results: int = 5) -> list:
                 ).execute()
             )
         except Exception as e:  # noqa: BLE001 — one bad message, skip it
-            logger.warning("Message %s read nahi ho paya: %s",
+            logger.warning("Couldn't read message %s: %s",
                            item.get("id"), e)
             continue
         messages.append(parse_message(raw))

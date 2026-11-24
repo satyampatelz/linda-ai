@@ -8,8 +8,8 @@ What friends see: Chromium opens on screen, goes to the Wikipedia page,
 and a moment later an Excel report appears in workspace/.
 
 Tip: the same demo also works through the chat UI — just ask Linda:
-"Wikipedia pe 'Machine Learning' ke baare me research karo aur 5 key points
-ki ek Excel report workspace me banao."
+"Research 'Machine Learning' on Wikipedia and make an Excel report
+with 5 key points in the workspace."
 """
 import sys
 from pathlib import Path
@@ -28,20 +28,20 @@ def main() -> None:
     topic = sys.argv[1] if len(sys.argv) > 1 else "Machine Learning"
     url = "https://en.wikipedia.org/wiki/" + topic.replace(" ", "_")
 
-    print(f"[1/4] Browser me khol raha hoon: {url}")
+    print(f"[1/4] Opening in the browser: {url}")
     print("      " + browser_tool.browser_open(url))
 
-    print("[2/4] Page padh raha hoon...")
+    print("[2/4] Reading the page...")
     text = browser_tool.browser_read()
-    body = text.split("Links (pehle 30):")[0]
+    body = text.split("Links (first 30):")[0]
     paragraphs = [p.strip() for p in body.split("\n") if len(p.strip()) > 80]
     key_points = paragraphs[:8]
-    print(f"      {len(key_points)} key paragraphs mile.")
+    print(f"      Found {len(key_points)} key paragraphs.")
 
-    print("[3/4] Screenshot le raha hoon...")
+    print("[3/4] Taking a screenshot...")
     print("      " + browser_tool.browser_screenshot("demo3_wikipedia.png"))
 
-    print("[4/4] Excel report bana raha hoon...")
+    print("[4/4] Building the Excel report...")
     wb = Workbook()
     ws = wb.active
     ws.title = "Report"
@@ -49,7 +49,7 @@ def main() -> None:
     ws["A1"].font = Font(bold=True, size=14)
     ws["A2"] = f"Source: {url}"
     ws["A2"].font = Font(italic=True, size=10)
-    ws["A4"] = "Key points (Wikipedia se)"
+    ws["A4"] = "Key points (from Wikipedia)"
     ws["A4"].font = Font(bold=True, size=12)
     row = 5
     for i, point in enumerate(key_points, start=1):
@@ -61,9 +61,9 @@ def main() -> None:
 
     out = settings.workspace_dir / f"{topic.replace(' ', '_')}_report.xlsx"
     wb.save(out)
-    print(f"      Report save ho gaya: {out}")
-    print("Done! Browser khula hua hai — band karne ke liye browser_close use karo.")
-    print("      (Ya browser window ko haath se band kar do.)")
+    print(f"      Report saved: {out}")
+    print("Done! The browser is still open — use browser_close to close it.")
+    print("      (Or close the browser window by hand.)")
 
 
 if __name__ == "__main__":

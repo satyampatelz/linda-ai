@@ -216,7 +216,7 @@ class CredentialsResult {
       stillMissing: ((j['still_missing'] as List?) ?? [])
           .map((f) => f.toString())
           .toList(),
-      message: (j['message'] as String?) ?? 'Save ho gaya.',
+      message: (j['message'] as String?) ?? 'Saved.',
     );
   }
 

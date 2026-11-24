@@ -4,7 +4,7 @@ Each check returns a dict:
   {"id", "label", "status", "detail", "hint"}
 status is "ok" | "fail" | "skip" (skip = not relevant right now, e.g. the
 Gemini check when Ollama is the active brain). Every failed check carries a
-short Hinglish "kaise fix karein" hint. Nothing here ever raises — a check
+short English "how to fix it" hint. Nothing here ever raises — a check
 that itself errors reports "fail" with a hint.
 
 The Gemini key check validates with a tiny models-list call (no generation,
@@ -46,19 +46,19 @@ def check_ollama_reachable():
             resp = client.get(f"{settings.ollama_url}/api/tags")
     except Exception:  # noqa: BLE001 — unreachable for any reason
         return _check(
-            "ollama_reachable", "Ollama chal raha hai", "fail",
-            "Ollama se connect nahi ho paya.",
-            "Ollama app kholo, ya terminal me 'ollama serve' chalao. "
-            "Agar Ollama install nahi hai toh ollama.com se install karo.",
+            "ollama_reachable", "Ollama is running", "fail",
+            "Couldn't connect to Ollama.",
+            "Open the Ollama app, or run 'ollama serve' in the terminal. "
+            "If Ollama isn't installed, install it from ollama.com.",
         )
     if resp.status_code != 200:
         return _check(
-            "ollama_reachable", "Ollama chal raha hai", "fail",
-            f"Ollama ne jawab diya: HTTP {resp.status_code}.",
-            "Ollama restart karo (app band karke dobara kholo).",
+            "ollama_reachable", "Ollama is running", "fail",
+            f"Ollama replied: HTTP {resp.status_code}.",
+            "Restart Ollama (close the app and open it again).",
         )
     return _check(
-        "ollama_reachable", "Ollama chal raha hai", "ok",
+        "ollama_reachable", "Ollama is running", "ok",
         f"Connected: {settings.ollama_url}",
     )
 
@@ -66,8 +66,8 @@ def check_ollama_reachable():
 def check_ollama_model(ollama_ok: bool):
     if not ollama_ok:
         return _check(
-            "ollama_model", f"Model '{settings.ollama_model}' downloaded hai",
-            "skip", "Ollama nahi chal raha, isliye check nahi ho paya.",
+            "ollama_model", f"Model '{settings.ollama_model}' downloaded",
+            "skip", "Ollama isn't running, so this couldn't be checked.",
         )
     try:
         with httpx.Client(timeout=CHECK_TIMEOUT, trust_env=False) as client:
@@ -75,35 +75,35 @@ def check_ollama_model(ollama_ok: bool):
         names = [m.get("name", "") for m in resp.json().get("models", [])]
     except Exception:  # noqa: BLE001
         return _check(
-            "ollama_model", f"Model '{settings.ollama_model}' downloaded hai",
-            "fail", "Model list nahi mil payi.",
-            "Ollama restart karo, phir Status dobara check karo.",
+            "ollama_model", f"Model '{settings.ollama_model}' downloaded",
+            "fail", "Couldn't get the model list.",
+            "Restart Ollama, then check Status again.",
         )
     wanted = settings.ollama_model
     if wanted in names or f"{wanted}:latest" in names:
         return _check(
-            "ollama_model", f"Model '{wanted}' downloaded hai", "ok",
-            f"{wanted} ready hai.",
+            "ollama_model", f"Model '{wanted}' downloaded", "ok",
+            f"{wanted} is ready.",
         )
     return _check(
-        "ollama_model", f"Model '{wanted}' downloaded hai", "fail",
-        "Model download nahi hua.",
-        f"Terminal me ye chalao: ollama pull {wanted}  (~1.9 GB, ek baar).",
+        "ollama_model", f"Model '{wanted}' downloaded", "fail",
+        "Model not downloaded.",
+        f"Run this in the terminal: ollama pull {wanted}  (~1.9 GB, once).",
     )
 
 
 def check_gemini_key():
     if settings.model_provider != "gemini":
         return _check(
-            "gemini_key", "Gemini key set + valid hai", "skip",
-            "Abhi Ollama brain chal raha hai — Gemini key zaroori nahi.",
+            "gemini_key", "Gemini key set + valid", "skip",
+            "The Ollama brain is active right now — no Gemini key needed.",
         )
     if not settings.gemini_api_key:
         return _check(
-            "gemini_key", "Gemini key set + valid hai", "fail",
-            "Gemini key set nahi hai.",
-            "Settings (⚙️) me Gemini key daalo — free key aistudio.google.com "
-            "se milti hai (card nahi lagta).",
+            "gemini_key", "Gemini key set + valid", "fail",
+            "Gemini key not set.",
+            "Add a Gemini key in Settings (⚙️) — a free key is available at "
+            "aistudio.google.com (no card needed).",
         )
     now = time.monotonic()
     if _GEMINI_CACHE["result"] is not None and now - _GEMINI_CACHE["at"] < _GEMINI_CACHE_TTL:
@@ -120,27 +120,27 @@ def check_gemini_key():
         pass
     if resp is None:
         result = _check(
-            "gemini_key", "Gemini key set + valid hai", "fail",
-            "Google se connect nahi ho paya.",
-            "Internet check karo, phir Status dobara kholo.",
+            "gemini_key", "Gemini key set + valid", "fail",
+            "Couldn't connect to Google.",
+            "Check your internet, then open Status again.",
         )
     elif resp.status_code == 200:
         result = _check(
-            "gemini_key", "Gemini key set + valid hai", "ok",
-            f"Key valid hai, model: {settings.gemini_model}.",
+            "gemini_key", "Gemini key set + valid", "ok",
+            f"Key is valid, model: {settings.gemini_model}.",
         )
     elif resp.status_code in (400, 401, 403):
         result = _check(
-            "gemini_key", "Gemini key set + valid hai", "fail",
-            "Key reject ho gayi (auth fail).",
-            "Settings (⚙️) me sahi key daalo — aistudio.google.com se nayi "
-            "free key bana sakte ho.",
+            "gemini_key", "Gemini key set + valid", "fail",
+            "Key rejected (auth failed).",
+            "Enter the correct key in Settings (⚙️) — you can make a new "
+            "free key at aistudio.google.com.",
         )
     else:
         result = _check(
-            "gemini_key", "Gemini key set + valid hai", "fail",
-            f"Google ne jawab diya: HTTP {resp.status_code}.",
-            "Thodi der baad Status dobara kholo.",
+            "gemini_key", "Gemini key set + valid", "fail",
+            f"Google replied: HTTP {resp.status_code}.",
+            "Open Status again in a little while.",
         )
     _GEMINI_CACHE["at"] = now
     _GEMINI_CACHE["result"] = result
@@ -150,10 +150,10 @@ def check_gemini_key():
 def check_git():
     if not shutil.which("git"):
         return _check(
-            "git", "Git installed + configured hai", "fail",
-            "Git nahi mila.",
-            "git-scm.com se Git install karo, phir terminal me apna naam aur "
-            "email set karo (neeche wala hint dekho).",
+            "git", "Git installed + configured", "fail",
+            "Git not found.",
+            "Install Git from git-scm.com, then set your name and email in "
+            "the terminal (see the hint below).",
         )
     try:
         name = subprocess.run(
@@ -166,21 +166,21 @@ def check_git():
         ).stdout.strip()
     except Exception:  # noqa: BLE001
         return _check(
-            "git", "Git installed + configured hai", "fail",
-            "Git config padh nahi paya.",
-            "Terminal me 'git config --global user.name \"Tumhara Naam\"' aur "
-            "'git config --global user.email \"tum@email.com\"' chalao.",
+            "git", "Git installed + configured", "fail",
+            "Couldn't read the Git config.",
+            "Run in the terminal: 'git config --global user.name \"Your Name\"' and "
+            "'git config --global user.email \"you@email.com\"'.",
         )
     if name and email:
         return _check(
-            "git", "Git installed + configured hai", "ok",
+            "git", "Git installed + configured", "ok",
             f"{name} <{email}>",
         )
     return _check(
-        "git", "Git installed + configured hai", "fail",
-        "Git hai, lekin naam/email set nahi hai.",
-        "Terminal me ye chalao: git config --global user.name \"Tumhara Naam\" "
-        "aur git config --global user.email \"tum@email.com\"",
+        "git", "Git installed + configured", "fail",
+        "Git is there, but name/email aren't set.",
+        "Run this in the terminal: git config --global user.name \"Your Name\" "
+        "and git config --global user.email \"you@email.com\"",
     )
 
 
@@ -189,28 +189,28 @@ def check_chromium():
         from playwright.sync_api import sync_playwright
     except ImportError:
         return _check(
-            "chromium", "Playwright Chromium installed hai", "fail",
-            "Playwright package nahi mila.",
-            "setup dobara chalao (setup.bat ya bash setup.sh).",
+            "chromium", "Playwright Chromium installed", "fail",
+            "Playwright package not found.",
+            "Run setup again (setup.bat or bash setup.sh).",
         )
     try:
         with sync_playwright() as p:
             exe = Path(p.chromium.executable_path)
     except Exception:  # noqa: BLE001 — executable_path raises when missing
         return _check(
-            "chromium", "Playwright Chromium installed hai", "fail",
-            "Chromium browser download nahi hua.",
-            "Terminal me (venv active) ye chalao: playwright install chromium",
+            "chromium", "Playwright Chromium installed", "fail",
+            "Chromium browser not downloaded.",
+            "Run in the terminal (venv active): playwright install chromium",
         )
     if exe.exists():
         return _check(
-            "chromium", "Playwright Chromium installed hai", "ok",
-            "Browser ready hai.",
+            "chromium", "Playwright Chromium installed", "ok",
+            "Browser is ready.",
         )
     return _check(
-        "chromium", "Playwright Chromium installed hai", "fail",
-        "Chromium browser download nahi hua.",
-        "Terminal me (venv active) ye chalao: playwright install chromium",
+        "chromium", "Playwright Chromium installed", "fail",
+        "Chromium browser not downloaded.",
+        "Run in the terminal (venv active): playwright install chromium",
     )
 
 
@@ -231,10 +231,10 @@ def check_messaging(platform: str):
         verify = settings.whatsapp_verify_token
         secret = settings.whatsapp_app_secret
         label = "WhatsApp auto-reply"
-        setup_hint = ("MESSAGING_SETUP.md me steps hain: Meta app me WhatsApp "
-                      "product add karo, phir chat me bolo 'WhatsApp ke "
-                      "messages dekhna' — secure box me token + IDs daal do "
-                      "(ya .env me haath se).")
+        setup_hint = ("Steps are in MESSAGING_SETUP.md: add the WhatsApp "
+                      "product in the Meta app, then say in chat 'watch my "
+                      "WhatsApp messages' — put the token + IDs in the "
+                      "secure box (or in .env by hand).")
     else:
         enabled = messaging_store.get_platform_enabled("instagram")
         token = settings.instagram_token
@@ -243,33 +243,33 @@ def check_messaging(platform: str):
         verify = settings.instagram_verify_token
         secret = settings.instagram_app_secret
         label = "Instagram auto-reply"
-        setup_hint = ("MESSAGING_SETUP.md me steps hain: Instagram ko Business "
-                      "/Creator banao, Facebook Page se link karo, phir chat "
-                      "me bolo 'Instagram ke messages dekhna' — secure box me "
-                      "token + IDs daal do (ya .env me haath se).")
+        setup_hint = ("Steps are in MESSAGING_SETUP.md: make Instagram a "
+                      "Business/Creator account, link it to a Facebook Page, "
+                      "then say in chat 'watch my Instagram messages' — put "
+                      "the token + IDs in the secure box (or in .env by hand).")
 
     check_id = f"{platform}_autoreply"
     if not enabled:
         return _check(check_id, label, "skip",
-                      "Auto-reply band hai — chat me bolo "
-                      f"'{platform.capitalize()} ke messages dekhna' toh "
-                      "chalu ho jayega.")
+                      "Auto-reply is off — say in chat "
+                      f"'watch my {platform.capitalize()} messages' to turn "
+                      "it on.")
     missing = [name for name, v in (("token", token),
                                     (target_name, target),
                                     ("verify token", verify)) if not v]
     if len(missing) == 3:
         return _check(check_id, label, "skip",
-                      "Set up nahi hai — chaaho toh MESSAGING_SETUP.md se set karo.")
+                      "Not set up — set it up from MESSAGING_SETUP.md if you want.")
     if missing:
         return _check(
             check_id, label, "fail",
-            f"Adhoora setup hai — ye missing hai: {', '.join(missing)}.",
+            f"Setup is incomplete — missing: {', '.join(missing)}.",
             setup_hint,
         )
-    detail = "Ready hai — aane wale DMs ka jawab apne aap jayega."
+    detail = "Ready — incoming DMs will be answered automatically."
     if not secret:
-        detail += (" (App secret set nahi hai — webhook signature check nahi "
-                   "hoga. Secure box me daal lo, zyada safe rahega.)")
+        detail += (" (App secret not set — webhook signatures won't be "
+                   "checked. Add it in the secure box to be safer.)")
     return _check(check_id, label, "ok", detail)
 
 
@@ -289,21 +289,21 @@ def check_gmail():
 
     if is_configured():
         return _check(
-            "gmail", "Gmail connected hai", "ok",
-            "token.json ready hai — Linda emails padh sakta hai.",
+            "gmail", "Gmail connected", "ok",
+            "token.json is ready — Linda can read emails.",
         )
     if has_client_secret():
         return _check(
-            "gmail", "Gmail connected hai", "fail",
-            "client_secret.json hai, lekin one-time auth nahi hua.",
-            "Terminal me (project folder, venv active) ye chalao: "
-            "python -m backend.app.gmail.auth — Google ka consent screen "
-            "khulega, ek baar Allow karo. Steps GMAIL_SETUP.md me hain.",
+            "gmail", "Gmail connected", "fail",
+            "client_secret.json is there, but the one-time auth hasn't been done.",
+            "Run this in the terminal (project folder, venv active): "
+            "python -m backend.app.gmail.auth — Google's consent screen will "
+            "open, click Allow once. Steps are in GMAIL_SETUP.md.",
         )
     return _check(
-        "gmail", "Gmail connected hai", "skip",
-        "Gmail set up nahi hai — chaaho toh GMAIL_SETUP.md se set karo "
-        "(emails padhna + email OTP auto-fill ke liye).",
+        "gmail", "Gmail connected", "skip",
+        "Gmail isn't set up — set it up from GMAIL_SETUP.md if you want "
+        "(for reading emails + email OTP auto-fill).",
     )
 
 
@@ -315,15 +315,15 @@ def check_workspace_writable():
         ) as f:
             f.write(b"ok")
         return _check(
-            "workspace", "Workspace likhne layak hai", "ok",
+            "workspace", "Workspace is writable", "ok",
             str(settings.workspace_dir),
         )
     except Exception as e:  # noqa: BLE001
         return _check(
-            "workspace", "Workspace likhne layak hai", "fail",
-            f"Workspace me likh nahi paya: {e}",
-            "Project folder ki permissions check karo, ya folder ko kisi aur "
-            "jagah (jaise Desktop) copy karke chalao.",
+            "workspace", "Workspace is writable", "fail",
+            f"Couldn't write to the workspace: {e}",
+            "Check the project folder's permissions, or copy the folder "
+            "somewhere else (like the Desktop) and run it from there.",
         )
 
 
@@ -334,9 +334,9 @@ def run_all_checks() -> dict:
     try:
         ollama = check_ollama_reachable()
     except Exception:  # noqa: BLE001 — safety net, should not happen
-        ollama = _check("ollama_reachable", "Ollama chal raha hai", "fail",
-                        "Check hi nahi chal paya.",
-                        "Ollama app kholo ya 'ollama serve' chalao.")
+        ollama = _check("ollama_reachable", "Ollama is running", "fail",
+                        "The check itself couldn't run.",
+                        "Open the Ollama app or run 'ollama serve'.")
     checks.append(ollama)
     ollama_ok = ollama["status"] == "ok"
 
@@ -348,14 +348,14 @@ def run_all_checks() -> dict:
             checks.append(fn())
         except Exception:  # noqa: BLE001
             checks.append(_check(fn.__name__, fn.__name__, "fail",
-                                 "Check hi nahi chal paya.",
-                                 "Server restart karke dobara try karo."))
+                                 "The check itself couldn't run.",
+                                 "Restart the server and try again."))
     try:
         checks.insert(1, check_ollama_model(ollama_ok))
     except Exception:  # noqa: BLE001
         checks.insert(1, _check("ollama_model", "Ollama model", "fail",
-                                "Check hi nahi chal paya.",
-                                "Ollama restart karo."))
+                                "The check itself couldn't run.",
+                                "Restart Ollama."))
 
     failed = [c for c in checks if c["status"] == "fail"]
     return {

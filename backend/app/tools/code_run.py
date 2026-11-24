@@ -18,11 +18,11 @@ def run_python(path: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     base = settings.workspace_dir
     target = (base / path).resolve()
     if not target.is_relative_to(base):
-        raise ValueError("Sirf workspace ke andar ki file chala sakte ho.")
+        raise ValueError("Only files inside the workspace can be run.")
     if not target.exists():
-        raise FileNotFoundError(f"File nahi mili: {path}")
+        raise FileNotFoundError(f"File not found: {path}")
     if target.suffix != ".py":
-        raise ValueError("Sirf .py file chala sakte ho.")
+        raise ValueError("Only .py files can be run.")
 
     result = subprocess.run(
         [sys.executable, str(target)],
@@ -39,5 +39,5 @@ def run_python(path: str, timeout: int = DEFAULT_TIMEOUT) -> str:
     if err:
         report += f"--- stderr ---\n{err[-4000:]}\n"
     if not out and not err:
-        report += "(koi output nahi)"
+        report += "(no output)"
     return report

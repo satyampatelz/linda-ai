@@ -21,20 +21,20 @@ say() { printf '\n==> %s\n' "$*"; }
 
 # --- 1. Docker -----------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
-    say "Docker install ho raha hai..."
+    say "Installing Docker..."
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io docker-compose-v2
     sudo usermod -aG docker "$USER" || true
-    echo "NOTE: pehli baar Docker install hua hai — is script ko dobara"
-    echo "chalane se pehle ek baar logout karke wapas login karo (taaki"
-    echo "docker group lagu ho jaye), ya abhi ke liye 'sudo' se chalao."
+    echo "NOTE: Docker was just installed for the first time — before running"
+    echo "this script again, log out and log back in once (so the docker"
+    echo "group takes effect), or run it with 'sudo' for now."
 else
-    echo "Docker pehle se installed hai: $(docker --version)"
+    echo "Docker is already installed: $(docker --version)"
 fi
 
 # --- 2. .env --------------------------------------------------------------
 if [ ! -f "$ENV_FILE" ]; then
-    say "deploy/.env banaya ja raha hai..."
+    say "Creating deploy/.env..."
     cp "$DEPLOY_DIR/.env.example" "$ENV_FILE"
 fi
 
@@ -46,7 +46,7 @@ if ! grep -q '^API_TOKEN=.\+' "$ENV_FILE" 2>/dev/null; then
     else
         printf 'API_TOKEN=%s\n' "$TOKEN" >> "$ENV_FILE"
     fi
-    echo "API_TOKEN generate ho gaya (deploy/.env me save hai)."
+    echo "API_TOKEN generated (saved in deploy/.env)."
 fi
 
 # --- 3. Check required values ---------------------------------------------
@@ -55,21 +55,21 @@ GEMINI_KEY="$(grep '^GEMINI_API_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d '[:spac
 
 if [ -z "$DOMAIN" ] || [ -z "$GEMINI_KEY" ]; then
     echo
-    echo "Pehle deploy/.env me ye 2 cheezein bharo:"
-    echo "  1. DOMAIN= — apne VM ke public IP se, jaise:"
+    echo "First, fill in these 2 things in deploy/.env:"
+    echo "  1. DOMAIN= — from your VM's public IP, e.g.:"
     echo "       DOMAIN=123.45.67.89.nip.io"
-    echo "     (Apna public IP dekhne ke liye: curl -s ifconfig.me)"
-    echo "  2. GEMINI_API_KEY= — free key aistudio.google.com se"
+    echo "     (To see your public IP: curl -s ifconfig.me)"
+    echo "  2. GEMINI_API_KEY= — free key from aistudio.google.com"
     echo
-    echo "File kholo:  nano $ENV_FILE"
-    echo "Phir ye script dobara chalao:  bash deploy/deploy.sh"
+    echo "Open the file:  nano $ENV_FILE"
+    echo "Then run this script again:  bash deploy/deploy.sh"
     exit 0
 fi
 
 # --- 4. Open firewall ports on the VM itself -------------------------------
 # Oracle's Ubuntu images block everything except SSH in iptables by
 # default — the cloud security list alone is not enough.
-say "VM firewall me port 80/443 khole ja rahe hain..."
+say "Opening ports 80/443 in the VM firewall..."
 sudo iptables -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null \
     || sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null \
@@ -81,12 +81,12 @@ elif command -v iptables-save >/dev/null 2>&1; then
 fi
 
 # --- 5. Build + start ------------------------------------------------------
-say "Linda build + start ho raha hai (pehli baar 2-5 min lag sakte hain)..."
+say "Building + starting Linda (first time can take 2-5 min)..."
 cd "$DEPLOY_DIR"
 docker compose up -d --build
 
 # --- 6. Systemd unit (auto-start on boot) ----------------------------------
-say "Systemd unit install ho raha hai (boot pe auto-start)..."
+say "Installing the systemd unit (auto-start on boot)..."
 UNIT_SRC="$DEPLOY_DIR/linda.service"
 if [ "$PROJECT_DIR" != "/home/ubuntu/linda-ai" ]; then
     sed "s|/home/ubuntu/linda-ai|$PROJECT_DIR|g" "$UNIT_SRC" | sudo tee /etc/systemd/system/linda.service >/dev/null
@@ -96,24 +96,24 @@ fi
 sudo systemctl daemon-reload
 sudo systemctl enable linda.service >/dev/null 2>&1 || true
 
-# --- 7. Keep-alive cron (Oracle idle reclamation se bachav) -----------------
-say "Keep-alive cron lagaya ja raha hai..."
+# --- 7. Keep-alive cron (guards against Oracle idle reclamation) -----------------
+say "Setting up the keep-alive cron..."
 CRON_LINE="*/5 * * * * docker exec linda curl -fsS http://127.0.0.1:8000/health >/dev/null 2>&1 # linda-health"
 ( crontab -l 2>/dev/null | grep -v 'linda-health' ; echo "$CRON_LINE" ) | crontab -
-echo "Har 5 min me /health ping hoga (ye + regular use milke VM ko idle"
-echo "reclaim hone se bachata hai — details ORACLE_GUIDE.md me)."
+echo "/health will be pinged every 5 min (together with regular use, this"
+echo "keeps the VM from being reclaimed as idle — details in ORACLE_GUIDE.md)."
 
 # --- 8. Done ----------------------------------------------------------------
 echo
-echo "Ho gaya! Linda cloud pe chal raha hai."
+echo "Done! Linda is running in the cloud."
 if [ "$DOMAIN" = ":80" ]; then
     echo "  URL (HTTP only): http://$(curl -s ifconfig.me 2>/dev/null || echo '<VM-IP>')"
 else
     echo "  URL: https://$DOMAIN"
     echo "  Health check: https://$DOMAIN/health"
 fi
-echo "  API token (deploy/.env me hai, Flutter app me daalo):"
+echo "  API token (in deploy/.env — enter it in the Flutter app):"
 grep '^API_TOKEN=' "$ENV_FILE" | sed 's/^API_TOKEN=/  API_TOKEN=/'
 echo
-echo "Logs dekhne ke liye:  cd $DEPLOY_DIR && docker compose logs -f"
-echo "Restart karne ke liye: cd $DEPLOY_DIR && docker compose restart"
+echo "To see the logs:  cd $DEPLOY_DIR && docker compose logs -f"
+echo "To restart: cd $DEPLOY_DIR && docker compose restart"

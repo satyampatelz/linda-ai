@@ -76,7 +76,7 @@ class _StatusScreenState extends State<StatusScreen> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: _load,
-                child: const Text('Dobara try karo'),
+                child: const Text('Try again'),
               ),
             ],
           ),
@@ -101,8 +101,8 @@ class _StatusScreenState extends State<StatusScreen> {
             ),
             child: Text(
               _allOk
-                  ? 'Sab kuch theek hai — Linda ready hai.'
-                  : 'Kuch cheezein theek nahi hain — har fail wale ke neeche fix likha hai.',
+                  ? 'Everything looks good — Linda is ready.'
+                  : 'Some checks failed — each one shows its fix below.',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -161,7 +161,7 @@ class _StatusScreenState extends State<StatusScreen> {
           FilledButton.icon(
             onPressed: _load,
             icon: const LindaIcon('refresh', size: 18, color: Colors.white),
-            label: const Text('Dobara check karo'),
+            label: const Text('Check again'),
           ),
         ],
       ),

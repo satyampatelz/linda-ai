@@ -107,7 +107,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final url = _urlCtrl.text.trim();
     if (url.isEmpty) {
       setState(() {
-        _message = 'Server URL khaali nahi ho sakta.';
+        _message = 'Server URL cannot be empty.';
         _messageIsError = true;
       });
       return;
@@ -115,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final maxSteps = int.tryParse(_maxStepsCtrl.text.trim());
     if (maxSteps == null || maxSteps < 1 || maxSteps > 50) {
       setState(() {
-        _message = 'Max steps 1 se 50 ke beech hona chahiye.';
+        _message = 'Max steps must be between 1 and 50.';
         _messageIsError = true;
       });
       return;
@@ -148,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _message = 'Settings save ho gaye — bina restart ke lagu ho gaye.';
+        _message = 'Settings saved — applied without a restart.';
         _messageIsError = false;
         _geminiKeyCtrl.clear();
       });
@@ -204,14 +204,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         const Text(
-          'Sab kuch yahin se badlo — koi file edit karne ki zaroorat nahi. '
-          'Save karte hi bina restart ke lagu ho jayega.',
+          'Change everything here — no need to edit any file. '
+          'Applies as soon as you save, no restart needed.',
           style: TextStyle(color: LindaTheme.muted, fontSize: 13),
         ),
-        _section('Server se connection'),
+        _section('Server connection'),
         _fieldLabel(
           'Server URL',
-          'Laptop ke liye http://127.0.0.1:8000 (ya same Wi-Fi pe laptop ka IP). Cloud ke liye https://tumhara-domain',
+          'For your laptop: http://127.0.0.1:8000 (or the laptop IP on the same Wi-Fi). For cloud: https://your-domain',
         ),
         TextField(
           controller: _urlCtrl,
@@ -220,41 +220,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: const InputDecoration(hintText: 'http://127.0.0.1:8000'),
         ),
         _fieldLabel(
-          'API token (sirf cloud server ke liye)',
-          'Ye token sirf is phone me save hota hai. Cloud server ke .env me jo API_TOKEN hai, wahi daalo.',
+          'API token (cloud server only)',
+          'This token is saved on this phone only. Enter the API_TOKEN from the cloud server .env file.',
         ),
         TextField(
           controller: _tokenCtrl,
           obscureText: true,
           autocorrect: false,
           decoration: const InputDecoration(
-            hintText: 'Laptop server pe zaroorat nahi',
+            hintText: 'Not needed for a laptop server',
           ),
         ),
-        _section('Brain — kaunsa model jawab dega?'),
+        _section('Brain — which model answers?'),
         DropdownButtonFormField<String>(
           initialValue: _provider,
           decoration: const InputDecoration(),
           items: const [
             DropdownMenuItem(
               value: 'ollama',
-              child: Text('Ollama — laptop ka local model (free)'),
+              child: Text('Ollama — local model on your laptop (free)'),
             ),
             DropdownMenuItem(
               value: 'gemini',
-              child: Text('Gemini — Google free-tier API (zyada smart)'),
+              child: Text('Gemini — Google free-tier API (smarter)'),
             ),
           ],
           onChanged: (v) => setState(() => _provider = v ?? 'ollama'),
         ),
         _fieldLabel(
-          'Ollama model ka naam',
-          'Model pehle download hona chahiye: ollama pull qwen2.5:3b',
+          'Ollama model name',
+          'The model must be downloaded first: ollama pull qwen2.5:3b',
         ),
         TextField(controller: _ollamaModelCtrl, autocorrect: false),
         _fieldLabel(
-          'Gemini API key (sirf Gemini brain ke liye)',
-          'Free key: aistudio.google.com → Get API key (card nahi lagta). Khaali chhodo toh purani key hi rahegi.',
+          'Gemini API key (only for the Gemini brain)',
+          'Free key: aistudio.google.com → Get API key (no card needed). Leave blank to keep the current key.',
         ),
         TextField(
           controller: _geminiKeyCtrl,
@@ -262,13 +262,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           autocorrect: false,
           decoration: InputDecoration(
             hintText: _geminiKeySet
-                ? 'Key set hai: $_geminiKeyMasked'
-                : 'Abhi key set nahi hai',
+                ? 'Key set: $_geminiKeyMasked'
+                : 'No key set yet',
           ),
         ),
-        _fieldLabel('Gemini model ka naam'),
+        _fieldLabel('Gemini model name'),
         TextField(controller: _geminiModelCtrl, autocorrect: false),
-        _section('Agent ka tareeka'),
+        _section('How the agent works'),
         _fieldLabel('Approval mode'),
         DropdownButtonFormField<String>(
           initialValue: _approval,
@@ -276,11 +276,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           items: const [
             DropdownMenuItem(
               value: 'auto',
-              child: Text('Auto — jo bolo wo seedha karega (default)'),
+              child: Text('Auto — does what you ask right away (default)'),
             ),
             DropdownMenuItem(
               value: 'ask',
-              child: Text('Ask — push/submit se pehle poochhega'),
+              child: Text('Ask — asks before push/submit'),
             ),
           ],
           onChanged: (v) => setState(() => _approval = v ?? 'auto'),
@@ -292,31 +292,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
           items: const [
             DropdownMenuItem(
               value: 'visible',
-              child: Text('Visible — Chrome screen pe dikhega'),
+              child: Text('Visible — you watch Chrome on screen'),
             ),
             DropdownMenuItem(
               value: 'headless',
-              child: Text('Headless — background me chalega'),
+              child: Text('Headless — runs in the background'),
             ),
           ],
           onChanged: (v) => setState(() => _browser = v ?? 'visible'),
         ),
         _fieldLabel(
           'Max steps per task (1–50)',
-          'Ek task me agent zyada se zyada kitne steps le sakta hai.',
+          'The most steps the agent can take in one task.',
         ),
         TextField(
           controller: _maxStepsCtrl,
           keyboardType: TextInputType.number,
         ),
-        _section('Voice — jawab sunai de?'),
+        _section('Voice — hear the replies?'),
         SwitchListTile(
           title: const Text(
             'Auto-speak replies',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           subtitle: const Text(
-            'Har agent reply apne aap bol ke sunayega. Band ho toh bhi har agent message ke speaker button se kabhi bhi sun sakte ho. Ye setting sirf is phone me save hoti hai.',
+            'Reads every agent reply aloud automatically. Even with it off, you can still listen anytime with the speaker button on any agent message. This setting is saved on this phone only.',
             style: TextStyle(color: LindaTheme.muted, fontSize: 12),
           ),
           value: _autoSpeak,
@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         FilledButton(
           onPressed: _saving ? null : _save,
-          child: Text(_saving ? 'Save ho raha hai…' : 'Save settings'),
+          child: Text(_saving ? 'Saving…' : 'Save settings'),
         ),
       ],
     );

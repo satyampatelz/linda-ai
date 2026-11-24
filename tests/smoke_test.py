@@ -1,4 +1,4 @@
-"""Smoke tests for Linda v0.10.0.
+"""Smoke tests for Linda v0.10.1.
 
 Run (venv active, from the project root):
     python tests/smoke_test.py
@@ -349,7 +349,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v16" in sw, "service worker cache not bumped to v16"
+    assert "linda-shell-v17" in sw, "service worker cache not bumped to v17"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -361,7 +361,7 @@ def test_pwa_voice_wiring():
     client = _client()
     resp = client.get("/health")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["version"] == "0.10.0", resp.text
+    assert resp.json()["version"] == "0.10.1", resp.text
 
     # --- v0.5: demo chips removed (PWA + Flutter) ---
     for gone in ("demoChips", 'class="chip"', "DemoChips", "_DemoChips"):
@@ -492,7 +492,7 @@ def test_settings_write_and_validate():
     assert settings.model_provider == "ollama"
     assert settings.approval_mode == "auto"
 
-    # Validation: each bad value is a 400 with a Hinglish message.
+    # Validation: each bad value is a 400 with an English message.
     for bad in ({"model_provider": "claude"},
                 {"approval_mode": "maybe"},
                 {"max_agent_steps": 99},
@@ -537,7 +537,7 @@ def test_task_stop():
                 break
             time.sleep(0.2)
         assert task is not None and task["status"] == "stopped", task
-        assert "rok diya" in (task["result"] or ""), task
+        assert "Task stopped" in (task["result"] or ""), task
         # Stopping an already-finished task is a clean 400, not a crash.
         resp = client.post(f"/tasks/{task_id}/stop")
         assert resp.status_code == 400, resp.text
@@ -619,7 +619,7 @@ def test_brain_no_retry_on_permanent_error():
         try:
             brain.chat([{"role": "user", "content": "hi"}], timeout=10)
         except brain.BrainError as e:
-            assert "nahi mila" in str(e), str(e)
+            assert "not found" in str(e), str(e)
         else:
             raise AssertionError("BrainError was NOT raised for 404")
         # Permanent error: exactly one call, no retry.
@@ -996,23 +996,23 @@ def test_messaging_chat_control():
         settings.instagram_verify_token = "fake-verify-ig-1"
         settings.instagram_app_secret = "fake-secret-ig-12345"
         msg = messaging_tool.set_messaging("instagram", True)
-        assert msg.startswith("Ho gaya"), msg
-        assert "tujhse nahi puchunga" in msg, msg
+        assert msg.startswith("Done"), msg
+        assert "without asking you" in msg, msg
         assert store.get_platform_enabled("instagram") is True
         status = messaging_tool.get_messaging_status()
-        assert "Instagram: ON hai" in status, status
+        assert "Instagram: ON" in status, status
         # Aliases work too (small local models vary).
         msg = messaging_tool.set_messaging("insta", False)
-        assert "band kar diya" in msg, msg
+        assert "is now off" in msg, msg
         assert store.get_platform_enabled("instagram") is False
-        assert "Instagram: OFF hai" in messaging_tool.get_messaging_status()
+        assert "Instagram: OFF" in messaging_tool.get_messaging_status()
 
         # --- (a2) enable with verify token missing -> still enables,
         # but records a pending request for the webhook fields. ---
         settings.instagram_verify_token = ""
         settings.instagram_app_secret = ""
         msg = messaging_tool.set_messaging("instagram", True)
-        assert "Ho gaya" in msg and "verify token" in msg, msg
+        assert "Done" in msg and "verify token" in msg, msg
         assert store.get_platform_enabled("instagram") is True
         pending = store.get_pending_credential("instagram")
         assert pending is not None and "verify_token" in pending, pending
@@ -1029,14 +1029,14 @@ def test_messaging_chat_control():
         assert "WHATSAPP_TOKEN" in msg, msg
         assert "WHATSAPP_PHONE_NUMBER_ID" in msg, msg
         assert "secure box" in msg, msg
-        assert "chat message me mat likho" in msg, msg
+        assert "Never type a token in a chat message" in msg, msg
         assert store.get_platform_enabled("whatsapp") is False
         pending = store.get_pending_credential("whatsapp")
         assert pending is not None, "no pending secure-box request"
         assert "token" in pending and "target_id" in pending, pending
         # Unknown platform -> plain-language nudge, no crash.
         msg = messaging_tool.set_messaging("telegram", True)
-        assert "Platform samajh nahi aaya" in msg, msg
+        assert "Couldn't understand the platform" in msg, msg
 
         # --- (c) Settings has no messaging fields anywhere. ---
         static = ROOT / "backend" / "static"
@@ -1067,7 +1067,7 @@ def test_messaging_chat_control():
         resp = client.post("/settings", json={
             "whatsapp_token": "EAAIgnoredToken1234567890"})
         assert resp.status_code == 400, resp.text
-        assert "Badalne ko kuch nahi" in resp.json()["detail"], resp.text
+        assert "Nothing to change" in resp.json()["detail"], resp.text
         assert settings.whatsapp_token == "", settings.whatsapp_token
 
         # --- secure-box UI wiring (PWA + Flutter chat) ---
@@ -1133,7 +1133,7 @@ def test_messaging_secure_credentials():
         assert "token" in pending[0]["fields"]
         assert "target_id" in pending[0]["fields"]
 
-        # Bad values -> 400 with a Hinglish message, nothing saved.
+        # Bad values -> 400 with an English message, nothing saved.
         for bad in ({"token": "short"},
                     {"token": "has space in it"},
                     {"target_id": "has space"},
@@ -1514,7 +1514,7 @@ def test_browser_fill_otp_stub():
     try:
         browser_tool.browser_open(page_path.as_uri())
         result = browser_tool.browser_fill_otp("TestSite")
-        assert "OTP bhar diya" in result, result
+        assert "OTP filled" in result, result
         assert "482916" not in result, "OTP code leaked into the result"
         page = browser_tool.browser._page
         assert page.input_value('input[name="otp"]') == "482916"
@@ -1522,7 +1522,7 @@ def test_browser_fill_otp_stub():
         page.evaluate(
             "document.querySelector('input[name=otp]').remove()")
         result = browser_tool.browser_fill_otp("TestSite")
-        assert "OTP bhar diya" in result, result
+        assert "OTP filled" in result, result
         values = page.eval_on_selector_all(
             '#boxes input', "els => els.map(e => e.value).join('')")
         assert values == "482916", values
@@ -1567,7 +1567,7 @@ def test_browser_fill_otp_user_code():
         assert browser_tool.browser._page.url == page_path.as_uri()
 
         result = browser_tool.browser_fill_otp(code="739284")
-        assert "OTP bhar diya" in result, result
+        assert "OTP filled" in result, result
         assert "739284" not in result, "user code leaked into the result"
         page = browser_tool.browser._page
         assert page.input_value('input[name="otp"]') == "739284"
@@ -1576,7 +1576,7 @@ def test_browser_fill_otp_user_code():
         page.evaluate(
             "document.querySelector('input[name=otp]').remove()")
         result = browser_tool.browser_fill_otp(code="7392")
-        assert "OTP bhar diya" in result, result
+        assert "OTP filled" in result, result
         assert "7392" not in result, "user code leaked into the result"
         values = page.eval_on_selector_all(
             '#boxes input', "els => els.map(e => e.value).join('')")
@@ -1584,14 +1584,15 @@ def test_browser_fill_otp_user_code():
 
         # An invalid code is refused cleanly, never echoed, never filled.
         result = browser_tool.browser_fill_otp(code="abc")
-        assert "sahi nahi" in result, result
+        assert "doesn't look right" in result, result
         assert "abc" not in result, result
 
         # Gmail-miss guidance (no code given, no email OTP found): the
         # agent must ASK the user — never "fill it yourself".
         gmail_tool.get_otp_code = lambda sender, minutes=10: None
         result = browser_tool.browser_fill_otp("TestSite")
-        assert "SMS pe aaya OTP bhejo" in result, result
+        assert "in the user's language" in result, result
+        assert "don't close the browser" in result, result
         assert "khud bharna hoga" not in result, result
     except Exception as e:  # noqa: BLE001
         if _skip_if_no_chromium(e):
@@ -1672,8 +1673,10 @@ def test_sms_otp_prompt():
     browser' wording is gone from the prompt and the OTP code paths."""
     from backend.app.agent import SYSTEM_PROMPT, TOOLS
 
-    # Ask-and-fill wording is present.
-    assert "SMS pe aaya OTP bhejo" in SYSTEM_PROMPT
+    # Ask-and-fill wording is present — the agent asks in the user's
+    # own language (no hardcoded phrase in any one language).
+    assert "whatever language the user is chatting in" in SYSTEM_PROMPT
+    assert "SMS pe aaya OTP bhejo" not in SYSTEM_PROMPT
     assert '"code": "482916"' in SYSTEM_PROMPT
     assert "do NOT close the browser" in SYSTEM_PROMPT
     assert "never ask the user for an email OTP" in SYSTEM_PROMPT

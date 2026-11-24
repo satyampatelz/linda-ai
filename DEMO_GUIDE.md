@@ -1,55 +1,55 @@
-# Linda — Demo Guide (doston ko dikhane ke liye)
+# Linda — Demo Guide (for showing friends)
 
-Teen demo, sabse aasan se sabse impressive tak. Har demo ke liye `run.bat` chala ke `http://127.0.0.1:8000` kholo. Demos ki detail `demos/` folder me bhi hai.
+Three demos, from easiest to most impressive. For every demo, run `run.bat` and open `http://127.0.0.1:8000`. Demo details are also in the `demos/` folder.
 
-**Demo se pehle (ek baar):** Ollama chal raha ho (`ollama pull qwen2.5:3b` ho chuka ho). Agar local model slow lage toh Settings (⚙️) me Gemini free tier on kar lo — demo smooth chalega. Status button se sab check kar lo pehle.
+**Before the demo (once):** Ollama must be running (`ollama pull qwen2.5:3b` already done). If the local model feels slow, turn on the Gemini free tier in Settings (⚙️) — the demo will run smoothly. Check everything first with the Status button.
 
 ---
 
 ## Demo 1 — Chat + Planning (2 min) 🗣️
-**Dikhao:** Linda sirf jawab nahi deta, kaam plan karke execute karta hai.
+**Show:** Linda doesn't just answer, it plans a task and executes it.
 
-Paste karo (ya UI me "👋 Kya kar sakte ho?" chip dabao):
-> Mujhe apne baare me batao — tum kya kya kar sakte ho?
+Paste this:
+> Tell me about yourself — what all can you do?
 
-Phir:
-> Mere liye ek Python project ka plan banao: ek to-do list app, FastAPI + HTML.
-> Plan ke baad project ke files bhi bana do.
+Then:
+> Make a plan for a Python project for me: a to-do list app, FastAPI + HTML.
+> After the plan, create the project files too.
 
-**Kya dikhega:** Live steps panel me Linda ke steps — sochna, files banana. Phir `workspace/` folder kholo — files ban gayi hongi.
+**What you'll see:** In the live steps panel, Linda's steps — thinking, creating files. Then open the `workspace/` folder — the files will be there.
 
-## Demo 2 — GitHub: code likhe, commit kare, push kare (5 min) 🐙
-**Dikhao:** Linda khud developer ki tarah kaam karta hai. (Detail: `demos/demo2_github.md`)
+## Demo 2 — GitHub: write code, commit, push (5 min) 🐙
+**Show:** Linda works like a developer on its own. (Detail: `demos/demo2_github.md`)
 
-**Pehle se:** GitHub pe ek empty repo banao (`hello-linda`), URL copy karo. Git user.name/email set ho.
+**Prepare in advance:** Create an empty repo on GitHub (`hello-linda`), copy the URL. Git user.name/email must be set.
 
-Paste karo (URL apna daalo):
-> Workspace me 'hello-linda' naam ka ek Python project banao — ek calculator CLI
-> with tests — phir use git me commit karo aur is repo pe push karo:
+Paste this (put in your own URL):
+> In the workspace, create a Python project called 'hello-linda' — a calculator CLI
+> with tests — then commit it in git and push it to this repo:
 > https://github.com/satyampatelz/hello-linda.git
 
-**Kya dikhega:** Live steps — files → git init → commit → push. Phir **github.com pe repo kholo aur refresh karo — code live hai.** Ye wala moment doston ko sabse zyada impress karega.
+**What you'll see:** Live steps — files → git init → commit → push. Then **open the repo on github.com and refresh — the code is live.** This is the moment that will impress your friends the most.
 
 ## Demo 3 — Browser + Excel report (3 min) 🌐
-**Dikhao:** Linda browser khud chalata hai aur report banata hai.
+**Show:** Linda drives the browser itself and makes a report.
 
-Paste karo (ya UI me "🌐 Research + Excel report" chip dabao):
-> Wikipedia pe 'Machine Learning' ke baare me research karo aur 5 key points ki
-> ek Excel report workspace me banao.
+Paste this:
+> Research 'Machine Learning' on Wikipedia and make an Excel report of 5 key points
+> in the workspace.
 
-**Kya dikhega:** Chromium window khud khul ke Wikipedia pe jata hai (visible browser — sab dikhta hai), phir `workspace/` me `Machine_Learning_report.xlsx` ban jata hai. Excel khol ke dikhao.
+**What you'll see:** A Chromium window opens on its own and goes to Wikipedia (visible browser — everything is visible), then `Machine_Learning_report.xlsx` is created in `workspace/`. Open the Excel file and show it.
 
-**Backup (bina LLM ke, 100% deterministic):** agar chat wala demo kabhi atak jaye, terminal me ye chalao:
+**Backup (no LLM, 100% deterministic):** if the chat demo ever gets stuck, run this in the terminal:
 ```
 python demos/demo3_browser_excel.py "Machine Learning"
 ```
-Ye wahi kaam seedha karta hai — browser + Excel, koi AI planning nahi.
+This does the same work directly — browser + Excel, no AI planning.
 
 ---
 
 ## Demo tips
-- **Pehle khud ek baar chala ke dekho** — doston ke saamne pehli baar try mat karo.
-- **Gemini free tier** demo ke liye zyada reliable hai (local 3B kabhi slow/galat ho sakta hai).
-- **Browser visible rakho** (`BROWSER_HEADLESS=false`) — doston ko dikhna chahiye ki browser khud chal raha hai.
-- **Phone se bhi dikha sakte ho** — README me "Phone se kaise chalaye" dekho. Phone pe chat karo, laptop pe browser khud chalta hua dikhega. Doston ko ye bahut impress karega.
-- Agar kuch fail ho jaye toh ghabrao mat — Live steps me error dikhta hai, use padh ke dobara bolo ("wo step dobara try karo").
+- **Run it yourself once first** — don't try it for the first time in front of your friends.
+- The **Gemini free tier** is more reliable for demos (the local 3B can sometimes be slow/wrong).
+- Keep the **browser visible** (`BROWSER_HEADLESS=false`) — your friends should see that the browser is running on its own.
+- **You can also show it from your phone** — see "Phone" in the README. Chat from the phone, and the browser will be seen running on its own on the laptop. Your friends will be very impressed by this.
+- If something fails, don't panic — the error shows in the live steps, read it and say it again ("try that step again").

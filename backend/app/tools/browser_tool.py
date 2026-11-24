@@ -20,7 +20,7 @@ them in the visible browser). OTPs CAN be filled by the agent, two ways:
 EMAIL OTPs are read from the user's Gmail and filled automatically
 (needs the Gmail setup from GMAIL_SETUP.md); SMS OTPs cannot be read
 (Linda has no SMS access), so the agent ASKS the user in chat for the
-code ("SMS pe aaya OTP bhejo") and fills it itself when the code comes
+code (asked in the user's own language) and fills it itself when the code comes
 — the user never has to type anything into the browser. A user-provided
 code is used once for the fill and never stored, logged, or echoed.
 """
@@ -74,8 +74,8 @@ class BrowserSession:
             self._page = pages[0] if pages else self._context.new_page()
         except Exception as e:
             raise RuntimeError(
-                "Chromium launch nahi ho paya. Kya 'playwright install chromium' "
-                f"chala tha? Details: {e}"
+                "Could not launch Chromium. Did you run 'playwright install chromium'? "
+                f"Details: {e}"
             )
         return self._page
 
@@ -86,7 +86,7 @@ class BrowserSession:
             url = "https://" + url
         page.goto(url, timeout=30000)
         page.wait_for_timeout(1200)
-        return f"Khul gaya: {page.title()} ({page.url})"
+        return f"Opened: {page.title()} ({page.url})"
 
     def read(self) -> str:
         page = self._ensure_page()
@@ -97,7 +97,7 @@ class BrowserSession:
         )
         out = f"Page: {page.title()} ({page.url})\n\n{text[:MAX_TEXT_CHARS]}"
         if links:
-            out += "\n\nLinks (pehle 30):\n" + "\n".join(links)
+            out += "\n\nLinks (first 30):\n" + "\n".join(links)
         return out
 
     def click(self, selector: str) -> str:
@@ -105,29 +105,29 @@ class BrowserSession:
         # Playwright accepts CSS selectors and "text=..." out of the box.
         page.click(selector, timeout=8000)
         page.wait_for_timeout(1000)
-        return f"Click ho gaya: {selector} — ab page: {page.title()} ({page.url})"
+        return f"Clicked: {selector} — now on page: {page.title()} ({page.url})"
 
     def type(self, selector: str, text: str) -> str:
         page = self._ensure_page()
         try:
             page.fill(selector, text, timeout=8000)
         except Exception:
-            # fill kaam na kare (non-input element) toh click + type karo.
+            # If fill doesn't work (non-input element), click + type instead.
             page.click(selector, timeout=8000)
             page.keyboard.type(text)
-        return f"Type ho gaya '{text[:60]}' in {selector}"
+        return f"Typed '{text[:60]}' into {selector}"
 
     def press(self, key: str) -> str:
         page = self._ensure_page()
         page.keyboard.press(key)
         page.wait_for_timeout(800)
-        return f"Key dabayi: {key} — ab page: {page.title()} ({page.url})"
+        return f"Pressed key: {key} — now on page: {page.title()} ({page.url})"
 
     def scroll(self) -> str:
         page = self._ensure_page()
         page.mouse.wheel(0, 800)
         page.wait_for_timeout(600)
-        return "Scroll ho gaya (neeche)."
+        return "Scrolled down."
 
     def screenshot(self, name: str = "shot.png") -> str:
         page = self._ensure_page()
@@ -138,7 +138,7 @@ class BrowserSession:
             safe += ".png"
         path = shots_dir / safe
         page.screenshot(path=str(path))
-        return f"Screenshot save ho gaya: {path}"
+        return f"Screenshot saved: {path}"
 
     # -- form filling -------------------------------------------------
     def _find_field(self, page, field: dict):
@@ -189,13 +189,13 @@ class BrowserSession:
         last_loc = None
         for field in fields or []:
             if not isinstance(field, dict) or "value" not in field:
-                skipped.append("(galat field — value nahi hai)")
+                skipped.append("(invalid field — no value)")
                 continue
             ident = (field.get("label") or field.get("name")
                      or field.get("placeholder") or "?")
             loc = self._find_field(page, field)
             if loc is None:
-                skipped.append(f"{ident} (field nahi mila)")
+                skipped.append(f"{ident} (field not found)")
                 continue
             ftype = (field.get("type") or "").strip().lower()
             value = field["value"]
@@ -215,7 +215,7 @@ class BrowserSession:
                 filled.append(ident)
                 last_loc = loc
             except Exception as e:
-                skipped.append(f"{ident} (bhar nahi paya: {e})")
+                skipped.append(f"{ident} (could not fill: {e})")
         submitted = ""
         if submit:
             try:
@@ -223,20 +223,20 @@ class BrowserSession:
                     "button[type=submit], input[type=submit]").first
                 if btn.count() and btn.is_visible():
                     btn.click(timeout=8000)
-                    submitted = " Submit dabaa diya."
+                    submitted = " Submit button clicked."
                 elif last_loc is not None:
                     last_loc.press("Enter")
-                    submitted = " Enter dabaa diya (submit button nahi mila)."
+                    submitted = " Pressed Enter (no submit button found)."
                 else:
-                    submitted = " Submit button nahi mila."
+                    submitted = " No submit button found."
                 page.wait_for_timeout(1500)
             except Exception as e:
-                submitted = f" Submit karte waqt error aaya: {e}."
-        summary = [f"Form khula: {page.title()} ({page.url})."]
+                submitted = f" Error while submitting: {e}."
+        summary = [f"Form opened: {page.title()} ({page.url})."]
         if filled:
-            summary.append(f"Bhar diye: {', '.join(filled)}.")
+            summary.append(f"Filled: {', '.join(filled)}.")
         if skipped:
-            summary.append(f"Skip hue: {'; '.join(skipped)}.")
+            summary.append(f"Skipped: {'; '.join(skipped)}.")
         if submitted:
             summary.append(submitted.strip())
         return " ".join(summary)
@@ -282,31 +282,31 @@ class BrowserSession:
         page = self._ensure_page()
         loc, kind = self._find_otp_field(page)
         if loc is None:
-            return ("Is page pe OTP wala field nahi mila — pehle browser_read "
-                    "se page dekho, ya jis step pe OTP aata hai wahan tak "
-                    "pahuncho, phir dobara bolo.")
+            return ("No OTP field found on this page — first look at the "
+                    "page with browser_read, or get to the step where the OTP "
+                    "appears, then try again.")
         if code is not None:
             code = str(code).strip()
             if not code.isdigit() or not 4 <= len(code) <= 8:
-                return ("Wo code sahi nahi lag raha — 4 se 8 digit ka number "
-                        "hona chahiye. User se dobara maango (finish answer "
-                        "me: 'SMS pe aaya OTP bhejo').")
-            source = "user se mila code"
+                return ("That code doesn't look right — it should be a 4 to "
+                        "8 digit number. Ask the user for it again (in your "
+                        "finish answer, in the user's language).")
+            source = "code from the user"
         else:
             from . import gmail_tool
 
             code = gmail_tool.get_otp_code(sender, minutes=minutes)
             if not code:
                 return (
-                    f"Pichhle {minutes} minute me '{sender}' se OTP wala "
-                    f"email nahi mila — ye SMS OTP lag raha hai, Gmail se "
-                    f"nahi milega. User se chat me code maango: finish "
-                    f"answer me bas ye likho — 'SMS pe aaya OTP bhejo' — "
-                    f"aur browser band mat karo, OTP wala page khula "
-                    f"rahega. Jab user code bheje toh browser_fill_otp me "
-                    f"code de ke khud bhar do."
+                    f"No OTP email from '{sender}' in the last {minutes} "
+                    f"minutes — this looks like an SMS OTP, which Gmail "
+                    f"can't provide. Ask the user for the code in chat: in "
+                    f"your finish answer, ask for the SMS OTP in the user's "
+                    f"language — and don't close the browser, the OTP page "
+                    f"will stay open. When the user sends the code, fill it "
+                    f"yourself with browser_fill_otp."
                 )
-            source = f"'{sender}' ke email se liya"
+            source = f"taken from '{sender}'s email"
         try:
             if kind == "boxes":
                 digits = list(code)[: loc.count()]
@@ -315,9 +315,9 @@ class BrowserSession:
             else:
                 loc.fill(code)
         except Exception as e:
-            return f"OTP field me code bhar nahi paya: {e}"
-        return (f"OTP bhar diya ({len(code)}-digit code, {source}). Ab "
-                f"Verify/Submit dabao ya bolo toh main dabata hoon.")
+            return f"Could not fill the code into the OTP field: {e}"
+        return (f"OTP filled ({len(code)}-digit code, {source}). Now "
+                f"click Verify/Submit, or tell me and I'll click it.")
 
     def close(self) -> str:
         # Closing the persistent context also closes its browser; the
@@ -335,7 +335,7 @@ class BrowserSession:
         self._playwright = None
         self._context = None
         self._page = None
-        return "Browser band ho gaya."
+        return "Browser closed."
 
 
 # One shared session for the whole agent run.

@@ -372,11 +372,11 @@
         setBrowser.value = s.browser_headless ? "headless" : "visible";
         setMaxSteps.value = s.max_agent_steps || 15;
         setGeminiKey.placeholder = s.gemini_key_set
-          ? ("Key set hai: " + (s.gemini_api_key_masked || "••••••••"))
-          : "Abhi key set nahi hai";
+          ? ("Key set: " + (s.gemini_api_key_masked || "••••••••"))
+          : "No key set yet";
       })
       .catch(function () {
-        settingsMsg.textContent = "Settings load nahi ho payi — server chal raha hai?";
+        settingsMsg.textContent = "Couldn't load Settings — is the server running?";
         settingsMsg.className = "form-msg error";
       });
   }
@@ -411,14 +411,14 @@
         settingsMsg.className = "form-msg ok";
         setGeminiKey.value = "";
         setGeminiKey.placeholder = res.d.settings && res.d.settings.gemini_key_set
-          ? ("Key set hai: " + (res.d.settings.gemini_api_key_masked || "••••••••"))
-          : "Abhi key set nahi hai";
+          ? ("Key set: " + (res.d.settings.gemini_api_key_masked || "••••••••"))
+          : "No key set yet";
         refreshHealth();
         showToast("Settings saved — applied without a restart.");
         setTimeout(function () { closeModal(settingsModal); }, 900);
       })
       .catch(function (err) {
-        settingsMsg.textContent = err.message || "Settings save nahi ho payi.";
+        settingsMsg.textContent = err.message || "Couldn't save Settings.";
         settingsMsg.className = "form-msg error";
       })
       .finally(function () {
@@ -447,7 +447,7 @@
   // ---- Status / health panel ----
   function renderHealth(data) {
     if (!data || !data.checks) {
-      healthList.innerHTML = '<p class="steps-empty">Status check nahi ho paya.</p>';
+      healthList.innerHTML = '<p class="steps-empty">Status check failed.</p>';
       return;
     }
     var html = "";
@@ -472,8 +472,8 @@
     });
     healthList.innerHTML = html;
     healthMsg.textContent = data.all_ok
-      ? "Sab kuch theek hai — Linda ready hai."
-      : "Kuch cheezein theek nahi hain — upar har fail wale ke neeche fix likha hai.";
+      ? "Everything looks good — Linda is ready."
+      : "Some checks failed — each one shows its fix below.";
     healthMsg.className = "form-msg " + (data.all_ok ? "ok" : "error");
     // The Status button keeps its icon + "Status" label; only the warn
     // class changes (amber border + amber pulse icon via CSS).
@@ -481,7 +481,7 @@
   }
 
   function loadHealth(autoShow) {
-    healthList.innerHTML = '<p class="steps-empty">Check ho raha hai…</p>';
+    healthList.innerHTML = '<p class="steps-empty">Checking…</p>';
     healthMsg.classList.add("hidden");
     apiFetch("/health/detailed")
       .then(function (r) { return r.json(); })
@@ -495,7 +495,7 @@
         }
       })
       .catch(function () {
-        healthList.innerHTML = '<p class="steps-empty">Status check nahi ho paya — server chal raha hai?</p>';
+        healthList.innerHTML = '<p class="steps-empty">Status check failed — is the server running?</p>';
       });
   }
 
@@ -652,7 +652,7 @@
         stopPolling();
         currentTaskId = null;
         if (agentBubble) {
-          var errText = "Error: " + (err.message || "server se baat nahi ho payi. Server chal raha hai?");
+          var errText = "Error: " + (err.message || "couldn't reach the server. Is it running?");
           agentBubble.innerHTML = "<p>" + escapeHtml(errText) + "</p>";
           agentBubble.classList.add("error");
           agentBubble.dataset.speakText = errText;
@@ -752,8 +752,8 @@
     whatsapp: {
       token: { label: "WhatsApp access token", hint: "Meta dashboard → WhatsApp → API Setup → permanent token (create it via a System User). Steps: MESSAGING_SETUP.md Part A." },
       target_id: { label: "WhatsApp phone number ID", hint: "Find it in Meta dashboard → WhatsApp → API Setup." },
-      verify_token: { label: "Verify token", hint: "Koi secret string khud banao (jaise linda-verify-12345) — wahi string Meta dashboard me webhook verify karte waqt bhi daalni hai." },
-      app_secret: { label: "App secret (optional)", hint: "Meta app → Settings → Basic → App Secret. Webhook signature check ke liye — na ho toh bhi kaam chalega.", optional: true }
+      verify_token: { label: "Verify token", hint: "Make up any secret string (e.g. linda-verify-12345) — enter the same string when verifying the webhook in the Meta dashboard." },
+      app_secret: { label: "App secret (optional)", hint: "Meta app → Settings → Basic → App Secret. Used to check webhook signatures — optional, it works without it.", optional: true }
     },
     instagram: {
       token: { label: "Instagram access token (Page token)", hint: "Access token of the linked Facebook Page. Steps: MESSAGING_SETUP.md Part B." },

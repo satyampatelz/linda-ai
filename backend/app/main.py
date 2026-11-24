@@ -38,7 +38,7 @@ Meta's servers call them and can't carry it. Their auth is Meta's own:
 the verify token (GET handshake) and the HMAC-SHA256 app-secret
 signature (POST body).
 
-Every error the UI can see is a short Hinglish message — full tracebacks
+Every error the UI can see is a short English message — full tracebacks
 go to the server log only, never to the user.
 """
 import logging
@@ -111,8 +111,8 @@ class _ApiTokenMiddleware(BaseHTTPMiddleware):
             if not ok:
                 return JSONResponse(
                     status_code=401,
-                    content={"detail": "API token galat ya missing hai — "
-                                       "Settings me sahi server token daalo."},
+                    content={"detail": "API token wrong or missing — "
+                                       "enter the correct server token in Settings."},
                 )
         return await call_next(request)
 
@@ -126,31 +126,31 @@ app.include_router(messaging_webhooks.router)
 
 @app.exception_handler(RequestValidationError)
 async def _validation_error(request: Request, exc: RequestValidationError):
-    # Turn FastAPI's technical 422 into one plain Hinglish message.
+    # Turn FastAPI's technical 422 into one plain English message.
     problems = []
     for err in exc.errors():
         field = ".".join(str(p) for p in err.get("loc", []) if p != "body")
         msg = err.get("msg", "")
-        # Our own validators already write Hinglish ("Value error, <text>");
+        # Our own validators already write English ("Value error, <text>");
         # keep that text verbatim.
         if err.get("type") == "value_error" and msg.startswith("Value error, "):
             problems.append(msg[len("Value error, "):])
         elif field == "max_agent_steps":
-            problems.append("Max steps 1 se 50 ke beech hona chahiye.")
+            problems.append("Max steps must be between 1 and 50.")
         elif field:
-            problems.append(f"'{field}' galat hai.")
-    detail = " ".join(problems) or "Input galat hai — values dobara check karo."
+            problems.append(f"'{field}' is invalid.")
+    detail = " ".join(problems) or "Invalid input — check the values again."
     return JSONResponse(status_code=400, content={"detail": detail})
 
 
 @app.exception_handler(Exception)
 async def _unhandled_error(request: Request, exc: Exception):
-    # Full details server-side only; the user gets one clean Hinglish line.
+    # Full details server-side only; the user gets one clean English line.
     logger.exception("Unhandled error on %s %s", request.method, request.url.path)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Server me achanak error aaya. Dobara try karo; "
-                           "agar baar-baar ho toh server restart karo."},
+        content={"detail": "A sudden server error occurred. Try again; "
+                           "if it keeps happening, restart the server."},
     )
 
 
@@ -181,14 +181,14 @@ class SettingsRequest(BaseModel):
     @classmethod
     def _check_provider(cls, v):
         if v is not None and v.strip().lower() not in ("ollama", "gemini"):
-            raise ValueError("model_provider 'ollama' ya 'gemini' hona chahiye.")
+            raise ValueError("model_provider must be 'ollama' or 'gemini'.")
         return v.strip().lower() if v is not None else None
 
     @field_validator("approval_mode")
     @classmethod
     def _check_approval(cls, v):
         if v is not None and v.strip().lower() not in ("auto", "ask"):
-            raise ValueError("approval_mode 'auto' ya 'ask' hona chahiye.")
+            raise ValueError("approval_mode must be 'auto' or 'ask'.")
         return v.strip().lower() if v is not None else None
 
     @field_validator("ollama_model", "gemini_model")
@@ -197,9 +197,9 @@ class SettingsRequest(BaseModel):
         if v is not None:
             v = v.strip()
             if not v or len(v) > 120:
-                raise ValueError("Model ka naam khaali ya bahut lamba hai.")
+                raise ValueError("The model name is empty or too long.")
             if any(ch.isspace() for ch in v):
-                raise ValueError("Model ke naam me space nahi ho sakta.")
+                raise ValueError("The model name can't contain spaces.")
         return v
 
     @field_validator("gemini_api_key")
@@ -208,8 +208,8 @@ class SettingsRequest(BaseModel):
         if v is not None:
             v = v.strip()
             if v and (len(v) < 10 or any(ch.isspace() for ch in v)):
-                raise ValueError("Gemini key galat lag rahi hai — poori key "
-                                 "paste karo (aistudio.google.com se milti hai).")
+                raise ValueError("The Gemini key looks wrong — paste the full "
+                                 "key (available at aistudio.google.com).")
         return v
 
 
@@ -219,7 +219,7 @@ class MessagingCredentialsRequest(BaseModel):
     omitted keeps its current value. Values are never logged and never
     echoed back in full — the response carries masked previews only.
     Validation lives in the endpoint (not Pydantic validators) so bad
-    values come back as a 400 with a plain Hinglish message, like
+    values come back as a 400 with a plain English message, like
     /settings does, instead of a 422 with a list."""
 
     platform: str
@@ -278,19 +278,19 @@ def get_settings():
 def update_settings(req: SettingsRequest):
     values = req.model_dump(exclude_unset=True)
     if not values:
-        raise HTTPException(status_code=400, detail="Badalne ko kuch nahi mila.")
+        raise HTTPException(status_code=400, detail="Nothing to change.")
     try:
         save_settings(values)
     except Exception:  # noqa: BLE001
         logger.exception("Failed to save settings")
         raise HTTPException(
             status_code=500,
-            detail="Settings save nahi ho payi — .env file likhne me problem hai.",
+            detail="Settings couldn't be saved — there's a problem writing the .env file.",
         )
     logger.info("Settings updated: %s", sorted(values))
     return {
         "ok": True,
-        "message": "Settings save ho gaye — bina restart ke lagu ho gaye.",
+        "message": "Settings saved — applied without a restart.",
         "settings": settings.public_dict(),
     }
 
@@ -299,7 +299,7 @@ def update_settings(req: SettingsRequest):
 def chat(req: ChatRequest):
     message = (req.message or "").strip()
     if not message:
-        raise HTTPException(status_code=400, detail="Message khaali hai.")
+        raise HTTPException(status_code=400, detail="Message is empty.")
     # The task list stores the message — mask any one-time code in it
     # (e.g. an SMS OTP the user just typed). The running task still gets
     # the original message: the agent needs the digits to fill the form.
@@ -333,7 +333,7 @@ def chat_history():
 def get_task(task_id: str):
     task = task_store.get(task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task nahi mila.")
+        raise HTTPException(status_code=404, detail="Task not found.")
     task["pending_approval"] = approvals.pending_for_task(task_id)
     return task
 
@@ -348,7 +348,7 @@ def approve_task(task_id: str, req: ApproveRequest):
     pending = approvals.pending_for_task(task_id)
     if not pending:
         raise HTTPException(
-            status_code=404, detail="Is task ke liye koi pending approval nahi hai."
+            status_code=404, detail="There is no pending approval for this task."
         )
     approvals.decide(pending["id"], req.approve)
     return {"ok": True, "approved": req.approve}
@@ -358,17 +358,17 @@ def approve_task(task_id: str, req: ApproveRequest):
 def stop_task(task_id: str):
     task = task_store.get(task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task nahi mila.")
+        raise HTTPException(status_code=404, detail="Task not found.")
     if task["status"] not in ("running", "waiting_approval"):
         raise HTTPException(
             status_code=400,
-            detail="Ye task pehle se khatam ho chuka hai — rokne ko kuch nahi hai.",
+            detail="This task has already finished — there's nothing to stop.",
         )
     # Wake the loop up if it is sitting on an approval, then flag the stop.
     approvals.cancel_for_task(task_id)
     task_store.request_stop(task_id)
-    return {"ok": True, "message": "Task roka ja raha hai — current step "
-                                   "khatam hote hi ruk jayega."}
+    return {"ok": True, "message": "Stopping the task — it will stop as "
+                                   "soon as the current step finishes."}
 
 
 @app.get("/memory")
@@ -405,11 +405,11 @@ def save_messaging_credentials_endpoint(req: MessagingCredentialsRequest):
     if platform not in ("whatsapp", "instagram"):
         raise HTTPException(
             status_code=400,
-            detail="Platform 'whatsapp' ya 'instagram' hona chahiye.",
+            detail="Platform must be 'whatsapp' or 'instagram'.",
         )
     if not isinstance(req.values, dict):
         raise HTTPException(status_code=400,
-                            detail="Values ek object hona chahiye.")
+                            detail="Values must be an object.")
     for field, value in req.values.items():
         if field not in ("token", "target_id", "verify_token", "app_secret"):
             raise HTTPException(
@@ -423,13 +423,13 @@ def save_messaging_credentials_endpoint(req: MessagingCredentialsRequest):
             if len(value) > 120 or any(ch.isspace() for ch in value):
                 raise HTTPException(
                     status_code=400,
-                    detail="ID galat lag raha hai — Meta dashboard se "
-                           "poora ID copy-paste karo.")
+                    detail="The ID looks wrong — copy-paste the full ID "
+                           "from the Meta dashboard.")
         elif len(value) < 10 or any(ch.isspace() for ch in value):
             raise HTTPException(
                 status_code=400,
-                detail="Token/secret galat lag raha hai — poora value "
-                       "paste karo (Meta dashboard se milta hai).")
+                detail="The token/secret looks wrong — paste the full "
+                       "value (available from the Meta dashboard).")
     req.platform = platform
     values = {k: str(v).strip() for k, v in (req.values or {}).items()
               if v is not None and str(v).strip()}
@@ -439,7 +439,7 @@ def save_messaging_credentials_endpoint(req: MessagingCredentialsRequest):
     if not values:
         raise HTTPException(
             status_code=400,
-            detail="Kuch daalo toh — saare fields khaali hain.",
+            detail="Enter something — all fields are empty.",
         )
     try:
         saved = save_messaging_credentials(req.platform, values)
@@ -447,28 +447,28 @@ def save_messaging_credentials_endpoint(req: MessagingCredentialsRequest):
         logger.exception("Failed to save messaging credentials")
         raise HTTPException(
             status_code=500,
-            detail="Save nahi ho paya — .env file likhne me problem hai.",
+            detail="Couldn't save — there's a problem writing the .env file.",
         )
     # Field names only in the log — never values.
     logger.info("Messaging credentials saved: %s %s", req.platform, saved)
     result = messaging_tool.complete_setup(req.platform)
     name = "WhatsApp" if req.platform == "whatsapp" else "Instagram"
     if result["enabled"] and not result["still_missing"]:
-        message = (f"Ho gaya — {name} ka auto-reply chalu ho gaya. Ab se "
-                   f"aane wale messages ka reply main khud dunga.")
+        message = (f"Done — {name} auto-reply is on. From now on I'll "
+                   f"reply to incoming messages myself.")
     elif result["enabled"]:
         if "verify_token" in result["still_missing"]:
-            message = (f"Save ho gaya aur {name} ka auto-reply chalu ho gaya "
-                       f"— bas verify token baki hai, wo bhi daal do toh "
-                       f"webhook chalega (warna message aayega hi nahi).")
+            message = (f"Saved, and {name} auto-reply is on — only the "
+                       f"verify token is still missing; add that too and the "
+                       f"webhook will work (otherwise no messages will arrive).")
         else:
-            message = (f"Save ho gaya aur {name} ka auto-reply chalu ho gaya. "
-                       f"(App secret abhi baki hai — optional hai, webhook "
-                       f"signature check ke liye hota hai.)")
+            message = (f"Saved, and {name} auto-reply is on. "
+                       f"(The app secret is still missing — it's optional, "
+                       f"used for the webhook signature check.)")
     else:
-        missing = ", ".join(result["still_missing"]) or "kuch fields"
-        message = (f"Save ho gaya — abhi bhi {missing} baki hai. Wo bhi "
-                   f"daal do, phir auto-reply chalu ho jayega.")
+        missing = ", ".join(result["still_missing"]) or "some fields"
+        message = (f"Saved — {missing} still missing. Add those too, "
+                   f"then auto-reply will turn on.")
     return {
         "ok": True,
         "platform": req.platform,
