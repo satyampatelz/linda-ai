@@ -67,11 +67,12 @@ def _now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-def seen_message(platform: str, message_id: str) -> bool:
-    """Record an inbound message id. Returns True if this is the FIRST
-    time we've seen it, False if it was already handled (a duplicate
-    delivery — Meta redelivers webhooks sometimes). The INSERT OR IGNORE
-    is atomic, so two threads racing on the same id can't both win."""
+def mark_message_seen(platform: str, message_id: str) -> bool:
+    """Record an inbound message id as seen. Returns True if this is
+    the FIRST time we've seen it (newly recorded), False if it was
+    already handled (a duplicate delivery — Meta redelivers webhooks
+    sometimes). The INSERT OR IGNORE is atomic, so two threads racing
+    on the same id can't both win."""
     init_db()
     with _conn() as conn:
         cur = conn.execute(

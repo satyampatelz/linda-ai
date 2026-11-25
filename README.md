@@ -9,7 +9,7 @@
 - **Browser** — works in a visible Chromium window, so you can watch it click, type, and read
 - **Kaggle** — lists competitions and datasets, downloads data, submits
 - **Files + code** — reads/writes files, runs Python scripts, fixes errors and retries
-- **Voice** — talk to it and hear replies (mic + speaker, free, on-device)
+- **Voice** — talk to it and hear replies (mic + speaker, free; in the web app, voice input uses Chrome's speech service, so it needs Chrome + internet)
 - **WhatsApp / Instagram auto-reply** — answers DMs on its own, in your style, via official Meta APIs. Control it from chat: *"start replying to my WhatsApp messages"*
 - **Gmail + OTP** — reads Gmail (read-only), fills email OTPs automatically, fills forms
 - **Desktop icon + chat history** — one click opens your chat; history survives restarts

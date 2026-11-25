@@ -119,7 +119,7 @@ def _handle(platform, message_id, contact_id, text, timestamp,
 
     # Dedupe FIRST, before any work — Meta redelivers webhooks, and a
     # crash mid-reply must never cause a second reply to the same message.
-    if not store.seen_message(platform, message_id):
+    if not store.mark_message_seen(platform, message_id):
         return {"action": "skipped", "reason": "duplicate"}
 
     # 24-hour window: measured from the contact's LAST inbound message

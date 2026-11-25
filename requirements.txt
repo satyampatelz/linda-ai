@@ -1,4 +1,4 @@
-# Linda v0.8 — Python dependencies (all free, all pip-installable)
+# Linda — Python dependencies (all free, all pip-installable)
 fastapi>=0.115
 uvicorn[standard]>=0.30
 httpx>=0.27
