@@ -1,5 +1,10 @@
 # Linda — Your Personal AI Agent
 
+![Version](https://img.shields.io/badge/version-0.10.3-blue)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-yellow)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
+![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
+
 **Linda** is your own autonomous AI agent — like Muse, but fully yours, at **₹0**. Tell it what to do in chat, and it does the work: writes code, pushes to GitHub, researches the web and makes Excel reports, does Kaggle work, manages files.
 
 ## What it can do
