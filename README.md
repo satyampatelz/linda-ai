@@ -48,6 +48,10 @@ For a smarter free brain, add a Gemini API key in **Settings** (free from [aistu
 
 ₹0. Local Ollama model, Gemini free tier, Playwright, FastAPI, Kaggle API — all free. No paid service anywhere in this project.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 ## Version
 
 **v0.10.3** (25 Nov 2026) — Agent discipline fix: the agent no longer runs files it hasn't written, never invents repo URLs, stops after two failed approaches instead of burning all 15 steps, and mirrors the user's language (Hinglish in, Hinglish out). Git never prompts for credentials anymore.
