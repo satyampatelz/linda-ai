@@ -74,6 +74,33 @@ class ChatHistoryMessage {
   final String text;
 }
 
+/// One side chat (conversation) — its own transcript on the server.
+class Conversation {
+  Conversation({
+    required this.id,
+    required this.title,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.messageCount,
+  });
+
+  factory Conversation.fromJson(Map<String, dynamic> j) {
+    return Conversation(
+      id: (j['id'] as num?)?.toInt() ?? 0,
+      title: (j['title'] as String?) ?? 'New chat',
+      createdAt: (j['created_at'] as String?) ?? '',
+      updatedAt: (j['updated_at'] as String?) ?? '',
+      messageCount: (j['message_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final int id;
+  final String title;
+  final String createdAt;
+  final String updatedAt;
+  final int messageCount;
+}
+
 class LindaTask {
   LindaTask({
     required this.id,
@@ -303,6 +330,22 @@ class ApiClient {
     }
   }
 
+  Future<dynamic> _delete(String path) async {
+    try {
+      final resp = await http
+          .delete(_uri(path), headers: _headers)
+          .timeout(const Duration(seconds: 20));
+      return _decode(resp);
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        "Can't reach the server — is it running? "
+        'Check the Server URL in Settings.',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> getHealth() async {
     final data = await _get('/health');
     return data as Map<String, dynamic>;
@@ -325,23 +368,58 @@ class ApiClient {
     await _post('/settings', values);
   }
 
-  Future<String> startChat(String message) async {
-    final data = await _post('/chat', {'message': message});
-    final taskId = (data as Map<String, dynamic>)['task_id'] as String?;
+  /// Start a task in a side chat. Returns (taskId, conversationId) —
+  /// the server resolves/creates the chat and echoes its id back.
+  Future<(String, int?)> startChat(String message, {int? conversationId}) async {
+    final data = await _post('/chat', {
+      'message': message,
+      'conversation_id': conversationId,
+    });
+    final map = data as Map<String, dynamic>;
+    final taskId = map['task_id'] as String?;
     if (taskId == null || taskId.isEmpty) {
       throw ApiException("Couldn't start the task.");
     }
-    return taskId;
+    return (taskId, (map['conversation_id'] as num?)?.toInt());
   }
 
-  /// Saved chat transcript, oldest first (v0.9). Empty list when the
-  /// server has no history yet — the chat just starts with the
-  /// welcome bubble.
-  Future<List<ChatHistoryMessage>> getChatHistory() async {
-    final data = await _get('/chat/history') as Map<String, dynamic>;
-    return ((data['messages'] as List?) ?? [])
+  /// All side chats, most recently active first.
+  Future<List<Conversation>> getConversations() async {
+    final data = await _get('/conversations') as Map<String, dynamic>;
+    return ((data['conversations'] as List?) ?? [])
+        .map((c) => Conversation.fromJson(c as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Start a new side chat. Returns its id.
+  Future<int> createConversation() async {
+    final data = await _post('/conversations') as Map<String, dynamic>;
+    final id = (data['id'] as num?)?.toInt();
+    if (id == null) throw ApiException("Couldn't create a new chat.");
+    return id;
+  }
+
+  /// Delete a side chat and all its messages.
+  Future<void> deleteConversation(int id) async {
+    await _delete('/conversations/$id');
+  }
+
+  /// Saved transcript of one side chat, oldest first (v0.9). With no
+  /// conversationId, the most recently active chat is used (created on
+  /// first run). Returns (messages, resolvedConversationId). Empty
+  /// message list when the chat has no history yet — the chat just
+  /// starts with the welcome bubble.
+  Future<(List<ChatHistoryMessage>, int?)> getChatHistory({
+    int? conversationId,
+  }) async {
+    final path = conversationId == null
+        ? '/chat/history'
+        : '/chat/history?conversation_id=$conversationId';
+    final data = await _get(path) as Map<String, dynamic>;
+    final messages = ((data['messages'] as List?) ?? [])
         .map((m) => ChatHistoryMessage.fromJson(m as Map<String, dynamic>))
         .toList();
+    return (messages, (data['conversation_id'] as num?)?.toInt());
   }
 
   Future<LindaTask> getTask(String taskId) async {
