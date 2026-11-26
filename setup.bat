@@ -82,8 +82,16 @@ if %errorlevel% neq 0 (
 echo.
 echo [6/6] .env file...
 if not exist .env (
-  copy .env.example .env >nul
-  echo   OK .env created (with default settings).
+  if exist .env.example (
+    copy .env.example .env >nul
+    if exist .env (
+      echo   OK .env created (with default settings).
+    ) else (
+      echo   ! .env copy failed — the app will create it on first Settings save.
+    )
+  ) else (
+    echo   ! .env.example not found — the app will create .env on first Settings save.
+  )
 ) else (
   echo   OK .env already exists — left untouched.
 )
