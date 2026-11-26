@@ -72,6 +72,20 @@ def mask_secret(value: str) -> str:
     return f"{value[:4]}{'•' * 8}{value[-4:]}"
 
 
+def _default_data_dir() -> Path:
+    """Where chat history + task history live when DATA_DIR isn't set.
+
+    An existing app-folder database wins (older installs keep their
+    history exactly where it is). Otherwise use a stable per-user home
+    (~/.linda/data) so re-downloading the app into a fresh folder
+    doesn't look like a brand-new user with no chat history.
+    """
+    legacy = BASE_DIR / "data"
+    if (legacy / "satyam.db").exists():
+        return legacy
+    return Path.home() / ".linda" / "data"
+
+
 class Settings:
     app_name = "Linda"
     app_version = "0.10.3"
@@ -117,7 +131,9 @@ class Settings:
         self.workspace_dir = Path(
             os.getenv("WORKSPACE_DIR", str(BASE_DIR / "workspace"))
         ).resolve()
-        self.data_dir = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
+        self.data_dir = Path(
+            os.getenv("DATA_DIR", str(_default_data_dir()))
+        ).resolve()
         self.host = os.getenv("HOST", "127.0.0.1")
         self.port = _int_env("PORT", 8000)
 
