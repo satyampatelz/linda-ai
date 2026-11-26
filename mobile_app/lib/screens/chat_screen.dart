@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -543,7 +544,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             itemCount: _steps.length,
                             itemBuilder: (context, i) {
                               final s = _steps[i];
-                              return _StepCard(step: s);
+                              return _StepCard(step: s, api: widget.api);
                             },
                           ),
                   ),
@@ -1370,13 +1371,19 @@ class _Composer extends StatelessWidget {
   }
 }
 
+/// Screenshot fetches are cached by URL so step cards don't refetch on
+/// every rebuild (the steps sheet rebuilds on each poll).
+final Map<String, Future<Uint8List?>> _shotFutures = {};
+
 class _StepCard extends StatelessWidget {
-  const _StepCard({required this.step});
+  const _StepCard({required this.step, required this.api});
 
   final TaskStep step;
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) {
+    final shot = step.shot;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -1406,6 +1413,25 @@ class _StepCard extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFE0E7FF)),
                 ),
                 child: Text(step.result, style: const TextStyle(fontSize: 12)),
+              ),
+            ],
+            // Live view: browser steps show what the agent's browser sees.
+            if (shot != null && shot.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              FutureBuilder<Uint8List?>(
+                future: _shotFutures.putIfAbsent(shot, () => api.fetchShot(shot)),
+                builder: (context, snap) {
+                  final bytes = snap.data;
+                  if (bytes == null) return const SizedBox.shrink();
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      bytes,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                  );
+                },
               ),
             ],
           ],
