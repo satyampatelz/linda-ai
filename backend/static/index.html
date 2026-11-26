@@ -84,12 +84,26 @@
           <h2>Live steps</h2>
           <button id="stepsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
         </div>
+        <!-- Live view of the agent's browser (small window in the chat) -->
+        <div id="browserLive" class="browser-live hidden">
+          <div class="browser-live-head">
+            <span class="browser-live-dot" aria-hidden="true"></span>
+            <span class="browser-live-title">Browser — live</span>
+            <span class="browser-live-hint">tap to enlarge</span>
+          </div>
+          <img id="browserLiveImg" alt="Linda's browser, live" title="Tap to enlarge">
+        </div>
         <div id="steps">
           <p class="steps-empty">Your agent's steps will appear here live.</p>
         </div>
       </aside>
       <div id="sheetBackdrop" class="hidden"></div>
     </main>
+  </div>
+
+  <!-- Browser screenshot lightbox (tap anywhere to close) -->
+  <div id="shotLightbox" class="shot-lightbox hidden" role="dialog" aria-label="Browser screenshot, enlarged">
+    <img id="shotLightboxImg" alt="Browser screenshot, enlarged">
   </div>
 
   <!-- Settings modal -->

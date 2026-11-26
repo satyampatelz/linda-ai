@@ -7,6 +7,10 @@
   var stepsCol = document.getElementById("stepsCol");
   var stepsBtn = document.getElementById("stepsBtn");
   var stepsClose = document.getElementById("stepsClose");
+  var browserLive = document.getElementById("browserLive");
+  var browserLiveImg = document.getElementById("browserLiveImg");
+  var shotLightbox = document.getElementById("shotLightbox");
+  var shotLightboxImg = document.getElementById("shotLightboxImg");
   var backdrop = document.getElementById("sheetBackdrop");
   var statusPill = document.getElementById("statusPill");
   var approvalCard = document.getElementById("approvalCard");
@@ -89,6 +93,8 @@
   var currentTaskId = null;
   var pollTimer = null;
   var renderedSteps = 0;
+  var lastShotUrl = "";
+  var liveShotObjectUrl = "";
   var agentBubble = null;
   var agentStepLine = null;
   var healthAutoShown = false;
@@ -516,6 +522,32 @@
   healthClose.addEventListener("click", function () { closeModal(healthModal); });
   healthRefresh.addEventListener("click", function () { loadHealth(false); });
 
+  // ---- Browser live view (small browser window inside the chat) ----
+  // Browser steps carry a screenshot URL; show the newest one in the card
+  // at the top of the steps panel. Fetched with the API token (an <img>
+  // tag can't send headers), shown as a blob.
+  function updateBrowserLive(url) {
+    if (!url || url === lastShotUrl) return;
+    lastShotUrl = url;
+    apiFetch(url)
+      .then(function (r) { if (!r.ok) throw new Error("shot"); return r.blob(); })
+      .then(function (blob) {
+        if (liveShotObjectUrl) URL.revokeObjectURL(liveShotObjectUrl);
+        liveShotObjectUrl = URL.createObjectURL(blob);
+        browserLiveImg.src = liveShotObjectUrl;
+        browserLive.classList.remove("hidden");
+      })
+      .catch(function () { /* live view is best-effort */ });
+  }
+  browserLiveImg.addEventListener("click", function () {
+    if (!liveShotObjectUrl) return;
+    shotLightboxImg.src = liveShotObjectUrl;
+    shotLightbox.classList.remove("hidden");
+  });
+  shotLightbox.addEventListener("click", function () {
+    shotLightbox.classList.add("hidden");
+  });
+
   // ---- Steps rendering ----
   function renderSteps(steps) {
     if (!steps || steps.length === 0) return;
@@ -535,6 +567,11 @@
     }
     renderedSteps = steps.length;
     stepsEl.scrollTop = stepsEl.scrollHeight;
+
+    // Keep the browser live view on the newest browser screenshot.
+    for (var j = steps.length - 1; j >= 0; j--) {
+      if (steps[j].shot) { updateBrowserLive(steps[j].shot); break; }
+    }
 
     // Latest step also shows inline in the agent bubble (handy on phones).
     if (agentStepLine && steps.length > 0) {
