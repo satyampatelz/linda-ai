@@ -44,6 +44,9 @@ To turn it off: `Win + R` → `shell:startup` → delete `Linda.lnk`.
 
 ## Troubleshooting
 
+- **`ERR_CONNECTION_REFUSED` in the browser** — the server is not running yet. Run `run.bat` first (or click the Linda icon, which starts it for you), wait until the "Linda Server" window shows it is ready, then refresh the page.
+- **Ollama "Couldn't connect" / model not found** — the Ollama app is not running, or the model has not been downloaded yet. Open the Ollama app from the Start menu, then run `ollama pull qwen2.5:3b` once in a terminal. After that, refresh the chat.
+- **Not sure what is missing?** — open the Status panel in the chat. It shows at a glance what is ready and what is missing (server, Ollama/model, Gemini key), so you can fix the one thing that is red instead of guessing.
 - **Clicking the icon opens a blank page** — the server is still starting. Wait 10–20 seconds, then refresh the window (F5). If it is still blank, look for the error in the "Linda Server" window.
 - **"Linda isn't set up yet" appears** — run `setup.bat` first (a one-time step), then click the icon again.
 - **No Chrome** — the launcher will use Edge (already on Windows 11). If neither is there, it will open in your default browser (with tabs).
