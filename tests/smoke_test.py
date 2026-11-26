@@ -373,7 +373,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v20" in sw, "service worker cache not bumped to v20"
+    assert "linda-shell-v21" in sw, "service worker cache not bumped to v21"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -651,6 +651,203 @@ def test_brain_no_retry_on_permanent_error():
     finally:
         settings.ollama_url, settings.model_provider = orig_url, orig_provider
         server.shutdown()
+
+
+# --- Gemini empty replies + browser live view (27 Nov fixes) ---
+def test_gemini_reply_extraction():
+    """Gemini 200-responses come in shapes the old code crashed on:
+    thought parts first (Gemini 3 thinking models), no candidates,
+    safety blocks. _gemini_reply_text must handle all of them — an
+    unparseable reply used to kill the whole task mid-way."""
+    f = brain._gemini_reply_text
+    text, problem = f({"candidates": [{"content": {"parts": [{"text": "hello"}]}}]})
+    assert (text, problem) == ("hello", None), (text, problem)
+    # Thought part first: reply text is in the later part, thought excluded.
+    text, problem = f({"candidates": [{"content": {"parts": [
+        {"thought": True, "text": "thinking out loud"},
+        {"text": "the answer"},
+    ]}}]})
+    assert (text, problem) == ("the answer", None), (text, problem)
+    # Multi-part text joins.
+    text, _ = f({"candidates": [{"content": {"parts": [{"text": "a"}, {"text": "b"}]}}]})
+    assert text == "ab", text
+    # No candidates at all -> empty (retryable).
+    text, problem = f({})
+    assert text is None and problem == "empty", (text, problem)
+    # Prompt blocked by the safety filter -> blocked (not retryable).
+    text, problem = f({"promptFeedback": {"blockReason": "SAFETY"}})
+    assert text is None and problem.startswith("blocked"), (text, problem)
+    # Candidate stopped for SAFETY with no parts -> blocked.
+    text, problem = f({"candidates": [{"finishReason": "SAFETY"}]})
+    assert text is None and problem.startswith("blocked"), (text, problem)
+
+
+def test_gemini_empty_reply_retried():
+    """A 200 with an empty body (free-tier glitch) is retried once inside
+    _chat_gemini instead of killing the task — the bug that stopped the
+    IITM-login task right after the browser opened the page."""
+    import json as _json
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    from backend.app.config import settings
+
+    state = {"n": 0}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            state["n"] += 1
+            length = int(self.headers.get("Content-Length", 0))
+            self.rfile.read(length)
+            if state["n"] == 1:
+                body = b"{}"  # 200 but no candidates — the empty reply
+            else:
+                body = _json.dumps({"candidates": [
+                    {"content": {"parts": [{"text": "gemini-ok"}]}}
+                ]}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    orig = (brain.GEMINI_API_URL, settings.model_provider,
+            settings.gemini_api_key, settings.gemini_model)
+    brain.GEMINI_API_URL = f"http://127.0.0.1:{server.server_address[1]}"
+    settings.model_provider = "gemini"
+    settings.gemini_api_key = "test-key"
+    settings.gemini_model = "gemini-test-model"
+    try:
+        out = brain.chat([{"role": "user", "content": "hi"}], timeout=10)
+        assert out == "gemini-ok", out
+        assert state["n"] == 2, state  # empty once, retried, then answered
+    finally:
+        (brain.GEMINI_API_URL, settings.model_provider,
+         settings.gemini_api_key, settings.gemini_model) = orig
+        server.shutdown()
+
+
+def test_gemini_empty_reply_gives_up_cleanly():
+    """If Gemini keeps returning empty replies, the task fails with a
+    clear transient BrainError (after retries) — never a crash."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    from backend.app.config import settings
+
+    state = {"n": 0}
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            state["n"] += 1
+            length = int(self.headers.get("Content-Length", 0))
+            self.rfile.read(length)
+            body = b"{}"
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    orig = (brain.GEMINI_API_URL, settings.model_provider,
+            settings.gemini_api_key, settings.gemini_model)
+    brain.GEMINI_API_URL = f"http://127.0.0.1:{server.server_address[1]}"
+    settings.model_provider = "gemini"
+    settings.gemini_api_key = "test-key"
+    settings.gemini_model = "gemini-test-model"
+    try:
+        try:
+            brain.chat([{"role": "user", "content": "hi"}], timeout=10)
+        except brain.BrainError as e:
+            assert "empty" in str(e), str(e)
+            assert e.transient, "empty-reply error should be transient"
+        else:
+            raise AssertionError("BrainError was NOT raised for empty replies")
+        # 2 tries inside _chat_gemini x brain.chat's transient retry.
+        assert state["n"] == 4, state
+    finally:
+        (brain.GEMINI_API_URL, settings.model_provider,
+         settings.gemini_api_key, settings.gemini_model) = orig
+        server.shutdown()
+
+
+def test_browser_live_view():
+    """The in-chat browser live view: live_shot_url() is silent when no
+    browser is open, and /browser/shot serves the latest screenshot
+    (404 until the first browser step captures one)."""
+    from backend.app.config import settings
+    from backend.app.tools import browser_tool
+
+    browser_tool.browser_close()
+    assert browser_tool.live_shot_url() == ""
+
+    client = _client()
+    shots = settings.workspace_dir / "screenshots"
+    live = shots / "live.png"
+    shots.mkdir(parents=True, exist_ok=True)
+    backup = live.read_bytes() if live.exists() else None
+    try:
+        if live.exists():
+            live.unlink()
+        resp = client.get("/browser/shot")
+        assert resp.status_code == 404, resp.text
+        live.write_bytes(b"\x89PNG\r\n\x1a\nfake")
+        resp = client.get("/browser/shot")
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"].startswith("image/png")
+        assert resp.content.startswith(b"\x89PNG")
+    finally:
+        if backup is None:
+            live.unlink(missing_ok=True)
+        else:
+            live.write_bytes(backup)
+
+
+def test_browser_tool_arg_aliases():
+    """Small models guess arg names ("link" for "url"). The browser tool
+    wrappers accept the common aliases and, when a required arg is truly
+    missing, raise a ValueError that tells the model the correct usage —
+    instead of a bare TypeError that wastes the step."""
+    from backend.app.tools import browser_tool
+
+    for fn, want in ((browser_tool.browser_open, "url"),
+                     (browser_tool.browser_click, "selector"),
+                     (browser_tool.browser_type, "selector"),
+                     (browser_tool.browser_press, "key")):
+        try:
+            fn()
+        except ValueError as e:
+            assert want in str(e), (fn.__name__, str(e))
+        else:
+            raise AssertionError(f"{fn.__name__}() should need args")
+
+
+def test_pwa_browser_live_wiring():
+    """The browser live view is wired into the shipped PWA + Flutter app:
+    live card + lightbox in index.html, updateBrowserLive in app.js,
+    styles in style.css, and the Flutter step card shows the shot."""
+    static = ROOT / "backend" / "static"
+    html = (static / "index.html").read_text()
+    for want in ('id="browserLive"', 'id="browserLiveImg"', 'id="shotLightbox"'):
+        assert want in html, f"index.html missing {want}"
+    js = (static / "app.js").read_text()
+    assert "updateBrowserLive" in js, "app.js missing updateBrowserLive"
+    assert "steps[j].shot" in js, "app.js does not read step shots"
+    css = (static / "style.css").read_text()
+    assert ".browser-live" in css, "style.css missing .browser-live"
+    dart = "".join(
+        p.read_text() for p in (ROOT / "mobile_app" / "lib").rglob("*.dart")
+    )
+    assert "fetchShot" in dart, "Flutter missing fetchShot"
+    assert "step.shot" in dart, "Flutter step card does not show the shot"
 
 
 # --- v0.6: messaging (official Meta APIs, mock payloads only) ---
@@ -2249,6 +2446,12 @@ if __name__ == "__main__":
     check("brain_ollama_unreachable", test_brain_ollama_unreachable)
     check("brain_retry_transient", test_brain_retry)
     check("brain_no_retry_permanent", test_brain_no_retry_on_permanent_error)
+    check("gemini_reply_extraction", test_gemini_reply_extraction)
+    check("gemini_empty_reply_retried", test_gemini_empty_reply_retried)
+    check("gemini_empty_reply_gives_up", test_gemini_empty_reply_gives_up_cleanly)
+    check("browser_live_view", test_browser_live_view)
+    check("browser_tool_arg_aliases", test_browser_tool_arg_aliases)
+    check("pwa_browser_live_wiring", test_pwa_browser_live_wiring)
     check("kaggle_no_creds", test_kaggle_no_creds)
     check("browser_headless", test_browser_headless)
     check("health_endpoint", test_health_endpoint)
