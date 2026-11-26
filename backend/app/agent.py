@@ -511,15 +511,28 @@ def _run_task_inner(task_id: str, user_message: str):
         except TypeError as e:
             logger.warning("Bad tool call %s %s: %s",
                            action, _redact_args(action, args), e)
-            result = f"Tool call was wrong ({action}). Check the args again."
+            # Tell the model the CORRECT usage so it can fix the call on
+            # the next step instead of guessing again.
+            result = (
+                f"Tool call was wrong ({action}): {e}. "
+                f"Correct usage — {spec['desc']} "
+                "Call it again with exactly those arg names."
+            )
         except Exception as e:  # noqa: BLE001 — tool errors become observations
             logger.warning("Tool %s failed: %s", action, e)
             result = f"Tool error ({action}): {e}"
 
-        task_store.add_step(task_id, {
+        step = {
             "n": step_no, "thought": thought, "action": action,
             "args": args, "result": result[:MAX_OBSERVATION_CHARS],
-        })
+        }
+        # Browser steps carry a fresh screenshot so the chat can show the
+        # agent's browser live, in a small window inside the chat.
+        if action.startswith("browser_") and action != "browser_close":
+            shot = browser_tool.live_shot_url()
+            if shot:
+                step["shot"] = shot
+        task_store.add_step(task_id, step)
         messages.append({"role": "assistant", "content": raw})
         messages.append({
             "role": "user",

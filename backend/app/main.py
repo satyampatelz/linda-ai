@@ -49,7 +49,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -88,7 +88,8 @@ app.add_middleware(
 # static UI files are public too — the UI is useless without the token,
 # because every API call behind it is protected.
 _PROTECTED_PREFIXES = ("/chat", "/tasks", "/settings", "/memory",
-                       "/health/detailed", "/config", "/messaging")
+                       "/health/detailed", "/config", "/messaging",
+                       "/browser")
 
 
 class _ApiTokenMiddleware(BaseHTTPMiddleware):
@@ -370,6 +371,22 @@ def get_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found.")
     task["pending_approval"] = approvals.pending_for_task(task_id)
     return task
+
+
+@app.get("/browser/shot")
+def browser_shot():
+    """Latest screenshot of the agent's browser — the chat's live view.
+
+    The agent refreshes workspace/screenshots/live.png after every browser
+    step; browser steps carry this URL (cache-busted) so the UI can show
+    the browser in a small window inside the chat.
+    """
+    path = settings.workspace_dir / "screenshots" / "live.png"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="No browser screenshot yet.")
+    return FileResponse(
+        path, media_type="image/png", headers={"Cache-Control": "no-store"}
+    )
 
 
 @app.get("/tasks")
