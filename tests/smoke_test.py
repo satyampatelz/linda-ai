@@ -373,7 +373,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v19" in sw, "service worker cache not bumped to v19"
+    assert "linda-shell-v20" in sw, "service worker cache not bumped to v20"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -1983,6 +1983,116 @@ def test_chat_history_redaction():
     assert "order 1234 shipped" in [m["text"] for m in msgs]
 
 
+def test_conversations_store():
+    """Side chats: separate transcripts per conversation, auto-title
+    from the first user message, newest-active-first listing, and
+    delete removes the chat with its messages."""
+    from backend.app import memory as mem
+
+    a = mem.create_conversation()
+    b = mem.create_conversation()
+    assert a != b
+    mem.log_message("user", "conv-a first message", conversation_id=a)
+    mem.log_message("agent", "conv-a reply", conversation_id=a)
+    mem.log_message("user", "conv-b only message", conversation_id=b)
+
+    a_texts = [m["text"] for m in mem.recent_messages(a)]
+    b_texts = [m["text"] for m in mem.recent_messages(b)]
+    assert a_texts == ["conv-a first message", "conv-a reply"], a_texts
+    assert b_texts == ["conv-b only message"], b_texts
+
+    # Auto-title from the first user message.
+    assert mem.get_conversation(a)["title"] == "conv-a first message"
+    assert mem.get_conversation(b)["title"] == "conv-b only message"
+
+    # Listing: both present with counts; B most recently active first.
+    convs = {c["id"]: c for c in mem.list_conversations()}
+    assert convs[a]["message_count"] == 2
+    assert convs[b]["message_count"] == 1
+    assert mem.list_conversations()[0]["id"] == b
+
+    # resolve: bogus id falls back to most recent; valid id passes through.
+    assert mem.resolve_conversation(999999) == b
+    assert mem.resolve_conversation(a) == a
+    assert mem.resolve_conversation(None) == b
+
+    # Delete: chat and its messages are gone.
+    assert mem.delete_conversation(a) is True
+    assert mem.get_conversation(a) is None
+    assert mem.delete_conversation(a) is False
+    assert b in {c["id"] for c in mem.list_conversations()}
+
+
+def test_conversations_migration():
+    """A pre-conversations database (messages without conversation_id)
+    is migrated on init: orphan messages are grouped into one chat
+    titled from the first user message — no history lost, and the
+    migration is idempotent."""
+    import sqlite3
+    from backend.app import memory as mem
+
+    legacy = TMP / "legacy.db"
+    conn = sqlite3.connect(legacy)
+    conn.execute("""CREATE TABLE messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL, text TEXT NOT NULL, created_at TEXT NOT NULL)""")
+    conn.execute(
+        "INSERT INTO messages(role, text, created_at) VALUES(?,?,?)",
+        ("user", "legacy first message here", "2026-01-01T00:00:00+00:00"))
+    conn.execute(
+        "INSERT INTO messages(role, text, created_at) VALUES(?,?,?)",
+        ("agent", "legacy reply", "2026-01-01T00:01:00+00:00"))
+    conn.commit()
+    conn.close()
+
+    original = mem.DB_PATH
+    try:
+        mem.DB_PATH = legacy
+        mem.init_db()
+        convs = mem.list_conversations()
+        assert len(convs) == 1, convs
+        assert convs[0]["title"] == "legacy first message here", convs
+        msgs = mem.recent_messages(convs[0]["id"])
+        assert [m["text"] for m in msgs] == [
+            "legacy first message here", "legacy reply"], msgs
+        # Idempotent: a second init does not create another chat.
+        mem.init_db()
+        assert len(mem.list_conversations()) == 1
+    finally:
+        mem.DB_PATH = original
+
+
+def test_conversations_endpoint():
+    """Side-chat endpoints over HTTP: create/list/history/delete, and
+    POST /chat keeps the message in the chat it was sent to."""
+    client = _client()
+    resp = client.post("/conversations")
+    assert resp.status_code == 200, resp.text
+    cid = resp.json()["id"]
+
+    resp = client.post("/chat", json={
+        "message": "endpoint conv probe", "conversation_id": cid})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["conversation_id"] == cid
+
+    resp = client.get(f"/chat/history?conversation_id={cid}")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["conversation_id"] == cid
+    assert "endpoint conv probe" in [
+        m["text"] for m in resp.json()["messages"]]
+
+    resp = client.get("/conversations")
+    assert resp.status_code == 200, resp.text
+    mine = [c for c in resp.json()["conversations"] if c["id"] == cid]
+    assert mine and mine[0]["title"] == "endpoint conv probe", mine
+
+    resp = client.delete(f"/conversations/{cid}")
+    assert resp.status_code == 200, resp.text
+    resp = client.get("/conversations")
+    assert cid not in [c["id"] for c in resp.json()["conversations"]]
+    assert client.delete(f"/conversations/{cid}").status_code == 404
+
+
 def test_desktop_launcher():
     """The Windows desktop launcher is shipped and well-formed: the
     .bat reads server.txt, starts the local server only for local
@@ -2051,11 +2161,22 @@ def test_pwa_chat_history_renders():
     import socket
     import urllib.request
     from backend.app import memory as mem
+    from backend.app.agent import task_store
 
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as e:
         skip("history render test", f"Playwright not installed here: {e}")
+
+    # Earlier tests spawn task threads (POST /chat) whose late replies
+    # touch whichever conversation is most recent — wait for them to
+    # finish so the seeded chat stays the one the app opens.
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        if not any(t["status"] in ("running", "waiting_approval")
+                   for t in task_store.list_recent(limit=50)):
+            break
+        time.sleep(0.25)
 
     mem.log_message("user", "render-probe-user-msg")
     mem.log_message("agent", "render-probe-agent-reply")
@@ -2086,7 +2207,10 @@ def test_pwa_chat_history_renders():
                 page = browser.new_page(
                     viewport={"width": 390, "height": 844})
                 page.goto(base + "/", wait_until="networkidle")
-                page.wait_for_timeout(1200)
+                # History loads async (conversations -> history); wait
+                # for the seeded message instead of a fixed sleep.
+                page.locator("#messages").get_by_text(
+                    "render-probe-user-msg").wait_for(timeout=15000)
                 # The health modal auto-pops when Ollama is down (VM).
                 if page.locator("#healthModal:not(.hidden)").count():
                     page.locator("#healthClose").click()
@@ -2158,6 +2282,9 @@ if __name__ == "__main__":
     check("chat_history_store", test_chat_history_store)
     check("chat_history_endpoint", test_chat_history_endpoint)
     check("chat_history_redaction", test_chat_history_redaction)
+    check("conversations_store", test_conversations_store)
+    check("conversations_migration", test_conversations_migration)
+    check("conversations_endpoint", test_conversations_endpoint)
     check("desktop_launcher", test_desktop_launcher)
     check("chat_history_ui_wiring", test_chat_history_ui_wiring)
     check("pwa_chat_history_renders", test_pwa_chat_history_renders)
