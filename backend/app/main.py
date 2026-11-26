@@ -156,6 +156,9 @@ async def _unhandled_error(request: Request, exc: Exception):
 
 class ChatRequest(BaseModel):
     message: str
+    # Which side chat this message belongs to. Optional for older
+    # clients — the server falls back to the most recent chat.
+    conversation_id: int | None = None
 
 
 class ApproveRequest(BaseModel):
@@ -300,16 +303,21 @@ def chat(req: ChatRequest):
     message = (req.message or "").strip()
     if not message:
         raise HTTPException(status_code=400, detail="Message is empty.")
+    # Which side chat this belongs to (created on first use).
+    conversation_id = memory.resolve_conversation(req.conversation_id)
     # The task list stores the message — mask any one-time code in it
     # (e.g. an SMS OTP the user just typed). The running task still gets
     # the original message: the agent needs the digits to fill the form.
-    task_id = task_store.create(redact_otp_text(message))
+    task_id = task_store.create(
+        redact_otp_text(message), conversation_id=conversation_id)
     # The chat transcript (v0.9): the user's message is saved so the
     # chat survives closing and reopening the app. The agent's reply
     # is saved by the agent loop when the task finishes (agent.py).
     # Redacted first — a one-time code is never persisted.
     try:
-        memory.log_message("user", redact_otp_text(message))
+        memory.log_message(
+            "user", redact_otp_text(message),
+            conversation_id=conversation_id)
     except Exception:  # noqa: BLE001 — transcript is a bonus, not the task
         logger.warning("Could not save user message to chat history",
                        exc_info=True)
@@ -317,16 +325,42 @@ def chat(req: ChatRequest):
         target=run_task, args=(task_id, message), daemon=True
     )
     thread.start()
-    return {"task_id": task_id}
+    return {"task_id": task_id, "conversation_id": conversation_id}
+
+
+@app.get("/conversations")
+def conversations():
+    """All side chats, most recently active first."""
+    return {"conversations": memory.list_conversations()}
+
+
+@app.post("/conversations")
+def new_conversation():
+    """Start a new side chat. Returns its id and title."""
+    cid = memory.create_conversation()
+    return {"id": cid, "title": "New chat"}
+
+
+@app.delete("/conversations/{conversation_id}")
+def remove_conversation(conversation_id: int):
+    """Delete a side chat and all its messages."""
+    if not memory.delete_conversation(conversation_id):
+        raise HTTPException(status_code=404, detail="Chat not found.")
+    return {"ok": True}
 
 
 @app.get("/chat/history")
-def chat_history():
-    """The saved chat transcript, oldest first — what the UI renders
-    when the app opens, so the user gets their same chat back (v0.9).
-    Only user messages + agent replies, never tool internals; capped
-    at the newest 200 messages."""
-    return {"messages": memory.recent_messages()}
+def chat_history(conversation_id: int | None = None):
+    """One side chat's saved transcript, oldest first — what the UI
+    renders when the app opens, so the user gets their same chat back
+    (v0.9). Only user messages + agent replies, never tool internals;
+    capped at the newest 200 messages. With no conversation_id, the
+    most recently active chat is used."""
+    cid = memory.resolve_conversation(conversation_id)
+    return {
+        "messages": memory.recent_messages(cid),
+        "conversation_id": cid,
+    }
 
 
 @app.get("/tasks/{task_id}")

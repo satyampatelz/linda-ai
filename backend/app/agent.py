@@ -224,12 +224,13 @@ class TaskStore:
         self._stop_requested = set()
         self._lock = threading.Lock()
 
-    def create(self, message: str) -> str:
+    def create(self, message: str, conversation_id=None) -> str:
         task_id = uuid.uuid4().hex[:10]
         with self._lock:
             self._tasks[task_id] = {
                 "id": task_id,
                 "message": message,
+                "conversation_id": conversation_id,
                 "status": "running",  # running | waiting_approval | done | error | stopped
                 "steps": [],
                 "result": None,
@@ -255,16 +256,18 @@ class TaskStore:
     def stop(self, task_id: str, message: str):
         """Mark a task stopped (called by the agent loop itself)."""
         existed = False
+        conversation_id = None
         with self._lock:
             self._stop_requested.discard(task_id)
             if task_id in self._tasks:
                 existed = True
+                conversation_id = self._tasks[task_id].get("conversation_id")
                 self._tasks[task_id]["status"] = "stopped"
                 self._tasks[task_id]["result"] = message
         # The stop message is what the user sees in the chat bubble —
         # save it to the transcript (v0.9: the chat survives reopening).
         if existed:
-            _save_agent_message(message)
+            _save_agent_message(message, conversation_id)
 
     def get(self, task_id: str):
         with self._lock:
@@ -292,10 +295,12 @@ class TaskStore:
 
     def finish(self, task_id: str, result=None, error=None):
         existed = False
+        conversation_id = None
         with self._lock:
             self._stop_requested.discard(task_id)
             if task_id in self._tasks:
                 existed = True
+                conversation_id = self._tasks[task_id].get("conversation_id")
                 self._tasks[task_id]["status"] = "error" if error else "done"
                 self._tasks[task_id]["result"] = result
                 self._tasks[task_id]["error"] = error
@@ -305,16 +310,19 @@ class TaskStore:
         # the UI, so that is what gets saved.
         if existed:
             _save_agent_message(
-                f"Error: {error}" if error else (result or "Done."))
+                f"Error: {error}" if error else (result or "Done."),
+                conversation_id)
 
 
-def _save_agent_message(text: str):
+def _save_agent_message(text: str, conversation_id=None):
     """Save the agent's final reply to the chat transcript. The text is
     redacted first — a one-time code must never be persisted, even if
     the model echoed one back (it is told not to, but this is the
     safety net). Failures here must never break the task itself."""
     try:
-        memory.log_message("agent", redact_otp_text(text or ""))
+        memory.log_message(
+            "agent", redact_otp_text(text or ""),
+            conversation_id=conversation_id)
     except Exception:  # noqa: BLE001 — transcript is a bonus, not the task
         logger.warning("Could not save agent reply to chat history",
                        exc_info=True)
