@@ -25,6 +25,7 @@ code (asked in the user's own language) and fills it itself when the code comes
 code is used once for the fill and never stored, logged, or echoed.
 """
 import re
+import time
 from pathlib import Path
 
 from ..config import settings
@@ -139,6 +140,22 @@ class BrowserSession:
         path = shots_dir / safe
         page.screenshot(path=str(path))
         return f"Screenshot saved: {path}"
+
+    def live_shot(self) -> bool:
+        """Capture the current page to screenshots/live.png for the chat's
+        live browser view (the small browser window inside the chat).
+        Best-effort and silent: returns False instead of raising, because a
+        failed screenshot must never break the task."""
+        try:
+            page = self._page
+            if page is None:
+                return False
+            shots_dir = settings.workspace_dir / "screenshots"
+            shots_dir.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(shots_dir / "live.png"))
+            return True
+        except Exception:  # noqa: BLE001 — live view is decoration, not the task
+            return False
 
     # -- form filling -------------------------------------------------
     def _find_field(self, page, field: dict):
@@ -342,50 +359,82 @@ class BrowserSession:
 browser = BrowserSession()
 
 
+def live_shot_url() -> str:
+    """Fresh screenshot of the agent's browser for the in-chat live view.
+
+    Returns the (cache-busted) URL the UI should load, or "" when there is
+    no open page to show. Called by the agent after every browser step.
+    """
+    if browser.live_shot():
+        return f"/browser/shot?t={int(time.time() * 1000)}"
+    return ""
+
+
 # -- Plain functions the agent calls --------------------------------------
-def browser_open(url: str) -> str:
+# Small models sometimes guess a wrong arg name ("link" for "url",
+# "element" for "selector"). The wrappers below accept the common aliases
+# (and ignore unknown extras) so one guessed name doesn't waste a step.
+def browser_open(url: str = "", link: str = "", website: str = "",
+                 address: str = "", href: str = "", **_extra) -> str:
     """Open a URL in the visible Chromium window."""
-    return browser.open(url)
+    target = url or link or website or address or href
+    if not target:
+        raise ValueError('browser_open needs a URL: args {"url": "https://..."}')
+    return browser.open(target)
 
 
-def browser_read() -> str:
+def browser_read(**_extra) -> str:
     """Read the current page's text plus its first 30 links."""
     return browser.read()
 
 
-def browser_click(selector: str) -> str:
+def browser_click(selector: str = "", element: str = "", target: str = "",
+                  text: str = "", **_extra) -> str:
     """Click something: a CSS selector ('button.submit') or text ('text=Login')."""
-    return browser.click(selector)
+    sel = selector or element or target
+    if not sel and text:
+        sel = f"text={text}"
+    if not sel:
+        raise ValueError('browser_click needs args {"selector": "text=Login"}')
+    return browser.click(sel)
 
 
-def browser_type(selector: str, text: str) -> str:
+def browser_type(selector: str = "", text: str = "", value: str = "",
+                 element: str = "", **_extra) -> str:
     """Type text into a field (CSS selector, e.g. 'input[name=q]')."""
-    return browser.type(selector, text)
+    sel = selector or element
+    if not sel:
+        raise ValueError('browser_type needs args {"selector": "...", "text": "..."}')
+    return browser.type(sel, text or value)
 
 
-def browser_press(key: str) -> str:
+def browser_press(key: str = "", keys: str = "", **_extra) -> str:
     """Press a keyboard key, e.g. 'Enter', 'Tab', 'Escape'."""
-    return browser.press(key)
+    k = key or keys
+    if not k:
+        raise ValueError('browser_press needs args {"key": "Enter"}')
+    return browser.press(k)
 
 
-def browser_scroll() -> str:
+def browser_scroll(**_extra) -> str:
     """Scroll the page down."""
     return browser.scroll()
 
 
-def browser_screenshot(name: str = "shot.png") -> str:
+def browser_screenshot(name: str = "shot.png", **_extra) -> str:
     """Save a screenshot to workspace/screenshots/."""
     return browser.screenshot(name)
 
 
-def browser_fill_form(url: str, fields: list, submit: bool = True) -> str:
+def browser_fill_form(url: str = "", fields: list | None = None,
+                      submit: bool = True, link: str = "", **_extra) -> str:
     """Open a page, fill a form, optionally submit it. fields: a list of
     {"label"|"name"|"placeholder", "value", "type"?} dicts."""
-    return browser.fill_form(url, fields, submit=submit)
+    return browser.fill_form(url or link, fields or [], submit=submit)
 
 
 def browser_fill_otp(sender: str = "", minutes: int = 10,
-                     code: str | None = None) -> str:
+                     code: str | None = None, **_extra) -> str:
     """Fill the OTP on the current page. No `code`: read it from Gmail
     (email OTPs only — `sender` = the site, e.g. 'Internshala'). `code`
     given: fill the user-provided code directly (SMS OTP the user just
@@ -394,6 +443,6 @@ def browser_fill_otp(sender: str = "", minutes: int = 10,
     return browser.fill_otp(sender, minutes=minutes, code=code)
 
 
-def browser_close() -> str:
+def browser_close(**_extra) -> str:
     """Close the browser window."""
     return browser.close()
