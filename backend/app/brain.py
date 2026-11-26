@@ -18,6 +18,11 @@ logger = logging.getLogger("linda.brain")
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
+# If the configured Gemini model id is gone (404 — Google retires free-tier
+# model ids from time to time), try these known free-tier ids next, in
+# order. Whichever one answers is saved as the new configured model.
+GEMINI_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+
 # One retry after a short pause, for errors that are usually temporary
 # (network hiccup, model still loading, rate limit). Permanent errors
 # (no key, unknown model, bad request) are never retried.
@@ -170,68 +175,103 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
     if system_text:
         payload["system_instruction"] = {"parts": [{"text": system_text}]}
 
-    url = f"{GEMINI_API_URL}/{settings.gemini_model}:generateContent"
-    try:
-        with httpx.Client(timeout=timeout) as client:
-            resp = client.post(
-                url,
-                params={"key": settings.gemini_api_key},
-                json=payload,
+    # Try the configured model first; if Google says it doesn't exist
+    # (404 — free-tier model ids get retired), fall back to the other
+    # known free-tier ids and remember whichever one works.
+    candidates = [settings.gemini_model] + [
+        m for m in GEMINI_FALLBACK_MODELS if m != settings.gemini_model
+    ]
+    last_404_model = None
+    for model in candidates:
+        url = f"{GEMINI_API_URL}/{model}:generateContent"
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                resp = client.post(
+                    url,
+                    params={"key": settings.gemini_api_key},
+                    json=payload,
+                )
+        except httpx.ConnectError:
+            raise BrainError(
+                "Couldn't connect to the Gemini API. Check your internet.",
+                transient=True,
             )
-    except httpx.ConnectError:
-        raise BrainError(
-            "Couldn't connect to the Gemini API. Check your internet.",
-            transient=True,
-        )
-    except httpx.TimeoutException:
-        raise BrainError(
-            "The Gemini API took too long to reply (timeout).",
-            transient=True,
-        )
-    except BrainError:
-        raise
-    except Exception as e:  # noqa: BLE001 — any transport/config error, cleanly
-        logger.exception("Gemini transport error")
-        raise BrainError(
-            "An error occurred while talking to the Gemini API. Check your "
-            "internet and try again.",
-            transient=True,
-        )
+        except httpx.TimeoutException:
+            raise BrainError(
+                "The Gemini API took too long to reply (timeout).",
+                transient=True,
+            )
+        except BrainError:
+            raise
+        except Exception as e:  # noqa: BLE001 — any transport/config error, cleanly
+            logger.exception("Gemini transport error")
+            raise BrainError(
+                "An error occurred while talking to the Gemini API. Check your "
+                "internet and try again.",
+                transient=True,
+            )
 
-    if resp.status_code == 400:
-        raise BrainError(
-            f"Gemini rejected the request (400). The model id "
-            f"'{settings.gemini_model}' may no longer be on the free tier — in "
-            "Settings (⚙️), change the Gemini model and try gemini-3.8-flash "
-            "or gemini-3.5-flash-lite."
-        )
-    if resp.status_code in (401, 403):
-        raise BrainError(
-            "The Gemini key looks wrong (auth failed). Enter the correct key "
-            "in Settings (⚙️) — a free key is available at aistudio.google.com."
-        )
-    if resp.status_code == 429:
-        raise BrainError(
-            "Gemini free-tier quota is used up (rate limit). Try again in a "
-            "little while, or pick the Ollama brain in Settings (⚙️).",
-            transient=True,
-        )
-    if resp.status_code >= 500:
-        raise BrainError(
-            f"Gemini server error ({resp.status_code}). Try again in a little while.",
-            transient=True,
-        )
-    if resp.status_code != 200:
-        logger.warning("Gemini unexpected status %s: %s", resp.status_code, resp.text[:300])
-        raise BrainError(
-            f"Gemini error {resp.status_code}. Try again in a little while."
-        )
+        if resp.status_code == 404:
+            # Model id not found for this key/API version — try the next one.
+            logger.warning(
+                "Gemini model %s returned 404; trying next candidate", model
+            )
+            last_404_model = model
+            continue
+        if resp.status_code == 400:
+            raise BrainError(
+                f"Gemini rejected the request (400). The model id "
+                f"'{model}' may no longer be on the free tier — in "
+                "Settings (⚙️), change the Gemini model and try gemini-3.8-flash "
+                "or gemini-3.5-flash-lite."
+            )
+        if resp.status_code in (401, 403):
+            raise BrainError(
+                "The Gemini key looks wrong (auth failed). Enter the correct key "
+                "in Settings (⚙️) — a free key is available at aistudio.google.com."
+            )
+        if resp.status_code == 429:
+            raise BrainError(
+                "Gemini free-tier quota is used up (rate limit). Try again in a "
+                "little while, or pick the Ollama brain in Settings (⚙️).",
+                transient=True,
+            )
+        if resp.status_code >= 500:
+            raise BrainError(
+                f"Gemini server error ({resp.status_code}). Try again in a little while.",
+                transient=True,
+            )
+        if resp.status_code != 200:
+            logger.warning("Gemini unexpected status %s: %s", resp.status_code, resp.text[:300])
+            raise BrainError(
+                f"Gemini error {resp.status_code}. Try again in a little while."
+            )
 
-    try:
-        candidates = resp.json()["candidates"]
-        return candidates[0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError, ValueError):
-        raise BrainError(
-            "Gemini's reply was empty (maybe the safety filter blocked it). "
-            "Try the task again with slightly different wording."
-        )
+        # Success. If a fallback model answered, remember it so the next
+        # call goes straight to a model that works.
+        if model != settings.gemini_model:
+            logger.info(
+                "Gemini model %s works; saving it as the configured model", model
+            )
+            try:
+                from .config import save_settings
+
+                save_settings({"gemini_model": model})
+            except Exception:  # noqa: BLE001 — reply matters more than the save
+                logger.exception("Couldn't persist the working Gemini model")
+        try:
+            candidates_resp = resp.json()["candidates"]
+            return candidates_resp[0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError, ValueError):
+            raise BrainError(
+                "Gemini's reply was empty (maybe the safety filter blocked it). "
+                "Try the task again with slightly different wording."
+            )
+
+    # Every candidate model 404'd.
+    raise BrainError(
+        f"Gemini couldn't find any of these models for your key: "
+        f"{', '.join(candidates)}. They may have been retired from the free "
+        "tier. Open Settings (⚙️) and set a current Gemini model name, or "
+        "pick the Ollama brain (works offline, no key)."
+    )
