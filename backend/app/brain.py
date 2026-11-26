@@ -190,7 +190,8 @@ def _gemini_reply_text(data: dict):
         return text, None
     if cand.get("finishReason") == "SAFETY":
         return None, "blocked: SAFETY"
-    return None, "empty"
+    finish = cand.get("finishReason")
+    return None, f"empty (finishReason: {finish})" if finish else "empty"
 
 
 def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
@@ -209,6 +210,17 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
     if system_text:
         payload["system_instruction"] = {"parts": [{"text": system_text}]}
 
+    # Nudge variant for empty-reply retries: the same conversation plus one
+    # short instruction. Re-sending an identical prompt that just came back
+    # empty usually fails identically; a slightly different prompt (and,
+    # after that, a different model) often breaks through.
+    _, nudge_contents = _to_gemini_contents(
+        messages + [{"role": "user", "content":
+                     "Reply with ONLY the JSON object for the next step — "
+                     "no other text."}]
+    )
+    nudge_payload = dict(payload, contents=nudge_contents)
+
     # Try the configured model first; if Google says it doesn't exist
     # (404 — free-tier model ids get retired), fall back to the other
     # known free-tier ids and remember whichever one works.
@@ -216,6 +228,7 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
         m for m in GEMINI_FALLBACK_MODELS if m != settings.gemini_model
     ]
     last_404_model = None
+    last_problem = None
     for model in candidates:
         url = f"{GEMINI_API_URL}/{model}:generateContent"
         empty_attempts = 0
@@ -228,7 +241,9 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
                     resp = client.post(
                         url,
                         params={"key": settings.gemini_api_key},
-                        json=payload,
+                        # First try: the plain prompt. Retry after an empty
+                        # reply: the nudged prompt (see nudge_payload above).
+                        json=nudge_payload if empty_attempts else payload,
                     )
             except httpx.ConnectError:
                 raise BrainError(
@@ -312,21 +327,29 @@ def _chat_gemini(messages: list, temperature: float, timeout: int) -> str:
                     "Gemini's safety filter blocked this step. Try the task "
                     "again with slightly different wording."
                 )
-            # Empty reply with no block reason — usually a transient glitch
-            # on the free tier. Retry the same model once before giving up
+            # Empty reply with no block reason. First retry: same model,
+            # nudged prompt. Still empty: fall through to the next model —
+            # an empty reply can be a quirk of one model on one prompt
             # (this used to kill the whole task mid-way, e.g. right after
             # the browser opened a login page).
+            logger.warning(
+                "Gemini empty reply (model %s, %s): %s",
+                model, problem, resp.text[:500],
+            )
             empty_attempts += 1
             if empty_attempts > 1:
-                raise BrainError(
-                    "Gemini's reply was empty twice in a row. Try the task "
-                    "again in a little while.",
-                    transient=True,
-                )
+                last_problem = problem
+                break
             logger.warning(
-                "Gemini returned an empty reply (model %s); retrying once", model
+                "Retrying model %s with a nudged prompt", model
             )
 
+    if last_problem:
+        raise BrainError(
+            f"Gemini's reply was empty on every model ({last_problem}). "
+            "Try the task again in a little while.",
+            transient=True,
+        )
     # Every candidate model 404'd.
     raise BrainError(
         f"Gemini couldn't find any of these models for your key: "
