@@ -16,6 +16,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Where settings live. LINDA_ENV_FILE lets tests point at a temp file.
 ENV_PATH = Path(os.getenv("LINDA_ENV_FILE", str(BASE_DIR / ".env")))
 
+
+def _heal_env_encoding() -> None:
+    """Re-encode a legacy-encoded .env to UTF-8, if needed.
+
+    Older builds on Windows could write .env in the locale codec
+    (cp1252) — Path.write_text() without an encoding does that — and
+    python-dotenv reads UTF-8, so load_dotenv would raise
+    UnicodeDecodeError and the app would not start. Heal once, quietly;
+    never block startup on this.
+    """
+    try:
+        if ENV_PATH.exists():
+            ENV_PATH.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        try:
+            text = ENV_PATH.read_text(encoding="cp1252")
+            ENV_PATH.write_text(text, encoding="utf-8")
+        except Exception:  # noqa: BLE001 — startup must not die on this
+            pass
+
+
+_heal_env_encoding()
 load_dotenv(ENV_PATH)
 
 # Keys the Settings UI may change, with their .env names.
@@ -164,6 +186,23 @@ settings.workspace_dir.mkdir(parents=True, exist_ok=True)
 settings.data_dir.mkdir(parents=True, exist_ok=True)
 
 
+def _ensure_env_file(header: str) -> None:
+    """Make sure .env exists and is readable as UTF-8.
+
+    On Windows, Path.write_text() without an encoding uses the locale
+    codec (cp1252), which turns the em dash in the header into a byte
+    python-dotenv (UTF-8) cannot read back — the Settings save then
+    fails with "problem writing the .env file". Always write UTF-8,
+    and heal a .env an older build already wrote in a legacy encoding
+    by re-encoding it once.
+    """
+    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if not ENV_PATH.exists():
+        ENV_PATH.write_text(header, encoding="utf-8")
+        return
+    _heal_env_encoding()
+
+
 def save_settings(values: dict) -> None:
     """Persist validated settings to .env (creating it if needed) and
     apply them live. Only keys in SETTABLE_KEYS are written; everything
@@ -173,9 +212,7 @@ def save_settings(values: dict) -> None:
     None means "leave this key alone". An empty string for gemini_api_key
     clears the key.
     """
-    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if not ENV_PATH.exists():
-        ENV_PATH.write_text("# Linda settings — created by the Settings screen.\n")
+    _ensure_env_file("# Linda settings — created by the Settings screen.\n")
     for field, env_key in SETTABLE_KEYS.items():
         if field not in values or values[field] is None:
             continue
@@ -214,9 +251,7 @@ def save_messaging_credentials(platform: str, values: dict) -> list:
     saved. Values are NEVER logged — only field names leave this
     function."""
     mapping = MESSAGING_CREDENTIAL_KEYS.get(platform, {})
-    ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if not ENV_PATH.exists():
-        ENV_PATH.write_text("# Linda settings — created by the secure box.\n")
+    _ensure_env_file("# Linda settings — created by the secure box.\n")
     saved = []
     for field, env_key in mapping.items():
         value = values.get(field)
