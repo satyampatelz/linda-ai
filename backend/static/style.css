@@ -412,6 +412,32 @@ body::after {
 }
 .modal-note { color: var(--muted); font-size: 13px; }
 
+/* ---- Chats list (side chats) ---- */
+.chats-new { align-self: flex-start; }
+.chats-list { display: flex; flex-direction: column; gap: 8px; }
+.chat-item {
+  display: flex; align-items: stretch; gap: 6px;
+  background: #ffffff; border: 1px solid #dbe4f5; border-radius: 12px;
+  padding: 4px;
+}
+.chat-item.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18); }
+.chat-item-main {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none;
+  font-family: inherit; cursor: pointer; padding: 7px 9px;
+  display: flex; flex-direction: column; gap: 2px; border-radius: 9px;
+}
+.chat-item-main:active { background: #eef2ff; }
+.chat-item-title {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-item-meta { font-size: 12px; color: var(--muted); }
+.chat-del-btn {
+  background: none; border: none; cursor: pointer; padding: 8px;
+  border-radius: 9px; display: flex; align-items: center; flex-shrink: 0;
+}
+.chat-del-btn:active { background: #fff1f2; }
+
 /* Section heading inside a modal (v0.6 messaging settings). */
 .modal-section {
   font-size: 14px; font-weight: 700; letter-spacing: -0.01em;

@@ -39,6 +39,8 @@
       </div>
       <div class="appbar-actions">
         <span id="statusPill" class="pill pill-off">● offline</span>
+        <button id="chatsBtn" class="icon-btn icon-only" title="Chats" aria-label="Chats"><svg class="btn-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M5.2 4.2 H18.8 a1.6 1.6 0 0 1 1.6 1.6 V15.4 a1.6 1.6 0 0 1 -1.6 1.6 H10.4 L6.2 20.6 V17 H5.2 a1.6 1.6 0 0 1 -1.6 -1.6 V5.8 a1.6 1.6 0 0 1 1.6 -1.6 Z" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linejoin="round"/><path d="M7.4 8.6 H16.6 M7.4 12 H13.2" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+        <button id="newChatBtn" class="icon-btn icon-only" title="New chat" aria-label="New chat"><svg class="btn-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.5" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7"/><path d="M12 8 V16 M8 12 H16" fill="none" stroke="url(#voiceGrad)" stroke-width="1.9" stroke-linecap="round"/></svg></button>
         <button id="healthBtn" class="icon-btn status-btn" title="Status"><svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.5" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7"/><path d="M6.6 12 H9.1 l1.7-4.3 2.7 8.6 1.7-4.3 h2.2" fill="none" stroke="url(#voiceGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Status</span></button>
         <button id="settingsBtn" class="icon-btn icon-only" title="Settings" aria-label="Settings"><svg class="btn-icon" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M9.36 5.63 A6.9 6.9 0 0 1 10.80 5.20 L10.18 1.66 A10.5 10.5 0 0 1 13.82 1.66 L13.20 5.20 A6.9 6.9 0 0 1 15.96 6.35 L18.02 3.40 A10.5 10.5 0 0 1 20.60 5.98 L17.65 8.04 A6.9 6.9 0 0 1 18.80 10.80 L22.34 10.18 A10.5 10.5 0 0 1 22.34 13.82 L18.80 13.20 A6.9 6.9 0 0 1 17.65 15.96 L20.60 18.02 A10.5 10.5 0 0 1 18.02 20.60 L15.96 17.65 A6.9 6.9 0 0 1 13.20 18.80 L13.82 22.34 A10.5 10.5 0 0 1 10.18 22.34 L10.80 18.80 A6.9 6.9 0 0 1 8.04 17.65 L5.98 20.60 A10.5 10.5 0 0 1 3.40 18.02 L6.35 15.96 A6.9 6.9 0 0 1 5.20 13.20 L1.66 13.82 A10.5 10.5 0 0 1 1.66 10.18 L5.20 10.80 A6.9 6.9 0 0 1 6.35 8.04 L3.40 5.98 A10.5 10.5 0 0 1 5.98 3.40 L8.04 6.35 Z M9.3 12 A2.7 2.7 0 1 0 14.7 12 A2.7 2.7 0 1 0 9.3 12 Z" fill="url(#voiceGrad)" fill-rule="evenodd"/></svg></button>
         <button id="stepsBtn" class="icon-btn" title="Live steps">Steps</button>
@@ -184,6 +186,22 @@
       </div>
       <div class="modal-footer">
         <button id="healthRefresh" class="btn btn-yes">Check again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chats modal (side chats) -->
+  <div id="chatsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="chatsTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="chatsTitle">Chats</h2>
+        <button id="chatsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <button id="newChatBtn2" class="btn btn-yes chats-new">New chat</button>
+        <div id="chatsList" class="chats-list">
+          <p class="steps-empty">Loading chats…</p>
+        </div>
       </div>
     </div>
   </div>

@@ -44,6 +44,14 @@
   var healthList = document.getElementById("healthList");
   var healthMsg = document.getElementById("healthMsg");
 
+  // Chats modal (side chats)
+  var chatsBtn = document.getElementById("chatsBtn");
+  var newChatBtn = document.getElementById("newChatBtn");
+  var chatsModal = document.getElementById("chatsModal");
+  var chatsClose = document.getElementById("chatsClose");
+  var chatsList = document.getElementById("chatsList");
+  var newChatBtn2 = document.getElementById("newChatBtn2");
+
   var toastEl = document.getElementById("toast");
   var toastTimer = null;
 
@@ -84,6 +92,8 @@
   var agentBubble = null;
   var agentStepLine = null;
   var healthAutoShown = false;
+  var currentConversationId = null; // side chat currently open
+  var conversations = []; // all side chats, most recently active first
 
   function escapeHtml(s) {
     return String(s)
@@ -564,6 +574,8 @@
     inputEl.focus();
     // If this task asked for messaging credentials, show the secure box.
     checkMessagingPending();
+    // The chat's title/order may have changed — refresh the list.
+    loadConversations();
   }
 
   function pollTask() {
@@ -638,13 +650,17 @@
     apiFetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({
+        message: text,
+        conversation_id: currentConversationId,
+      }),
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (!res.ok || !res.d.task_id) {
           throw new Error((res.d && res.d.detail) || "Couldn't start the task.");
         }
+        if (res.d.conversation_id) currentConversationId = res.d.conversation_id;
         currentTaskId = res.d.task_id;
         startPolling();
       })
@@ -665,42 +681,188 @@
       });
   }
 
-  // ---- Chat history (v0.9) ----
-  // The server saves every user message + agent reply, so closing the
-  // app and reopening it (desktop icon, PWA, phone) shows the same
-  // chat. The static welcome bubble stays on top; restored messages
-  // render below it, oldest first. Agent replies get a working
-  // speaker button, just like fresh ones. Error replies keep their
-  // red bubble (the server saves them as "Error: ...").
-  var historyLoaded = false;
-  function loadChatHistory() {
-    if (historyLoaded) return;
-    historyLoaded = true;
-    apiFetch("/chat/history")
+  // ---- Side chats (conversations) ----
+  // Each chat has its own transcript on the server, so closing the app
+  // and reopening it shows the same chat (v0.9), and the Chats list
+  // switches between separate conversations. The static welcome
+  // bubble stays on top; restored messages render below it, oldest
+  // first. Agent replies get a working speaker button, just like
+  // fresh ones. Error replies keep their red bubble (the server saves
+  // them as "Error: ..."). Switching is blocked while a task runs —
+  // the reply always lands in the chat it was sent from.
+  var TRASH_ICON = '<svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5.2 6.4 H18.8 M9.2 6.4 V4.6 a1.4 1.4 0 0 1 1.4 -1.4 h2.8 a1.4 1.4 0 0 1 1.4 1.4 V6.4 M6.6 6.4 L7.4 19.2 a1.6 1.6 0 0 0 1.6 1.4 h6 a1.6 1.6 0 0 0 1.6 -1.4 L17.4 6.4 M10 10.2 V16.6 M14 10.2 V16.6" fill="none" stroke="url(#voiceGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function clearChatBubbles() {
+    // Keep the static welcome bubble (first child); drop the rest.
+    while (messagesEl.children.length > 1) {
+      messagesEl.removeChild(messagesEl.lastChild);
+    }
+    shownSecureCards = {};
+    agentBubble = null;
+    agentStepLine = null;
+  }
+
+  function renderHistoryMessages(messages) {
+    messages.forEach(function (m) {
+      if (m.role !== "user" && m.role !== "agent") return;
+      var text = m.text || "";
+      var isError = m.role === "agent" && text.indexOf("Error: ") === 0;
+      var bubble = addBubble(
+        m.role,
+        "<p>" + escapeHtml(text).replace(/\n/g, "<br>") + "</p>",
+        isError
+      );
+      if (m.role === "agent") {
+        bubble.dataset.speakText = text;
+        var speakBtn = bubble.parentElement.querySelector(".speak-btn");
+        if (speakBtn) speakBtn.classList.remove("hidden");
+      }
+    });
+    scrollChat();
+  }
+
+  function loadChatHistory(conversationId) {
+    var url = "/chat/history" +
+      (conversationId ? "?conversation_id=" + conversationId : "");
+    return apiFetch(url)
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        var messages = (d && d.messages) || [];
-        messages.forEach(function (m) {
-          if (m.role !== "user" && m.role !== "agent") return;
-          var text = m.text || "";
-          var isError = m.role === "agent" && text.indexOf("Error: ") === 0;
-          var bubble = addBubble(
-            m.role,
-            "<p>" + escapeHtml(text).replace(/\n/g, "<br>") + "</p>",
-            isError
-          );
-          if (m.role === "agent") {
-            bubble.dataset.speakText = text;
-            var speakBtn = bubble.parentElement.querySelector(".speak-btn");
-            if (speakBtn) speakBtn.classList.remove("hidden");
-          }
-        });
+        if (d && d.conversation_id) currentConversationId = d.conversation_id;
+        renderHistoryMessages((d && d.messages) || []);
       })
       .catch(function () {
         // Server down or history unavailable — the chat just starts
         // fresh with the welcome bubble; nothing to show the user.
       });
   }
+
+  function formatChatDate(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) +
+        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    } catch (e) { return ""; }
+  }
+
+  function renderChatsList() {
+    chatsList.innerHTML = "";
+    if (!conversations.length) {
+      chatsList.innerHTML = '<p class="steps-empty">No chats yet — start a new one.</p>';
+      return;
+    }
+    conversations.forEach(function (c) {
+      var row = document.createElement("div");
+      row.className = "chat-item" + (c.id === currentConversationId ? " active" : "");
+      var main = document.createElement("button");
+      main.type = "button";
+      main.className = "chat-item-main";
+      main.innerHTML =
+        '<span class="chat-item-title">' + escapeHtml(c.title || "New chat") + "</span>" +
+        '<span class="chat-item-meta">' + escapeHtml(formatChatDate(c.updated_at)) +
+        (c.message_count ? " · " + c.message_count + " messages" : "") + "</span>";
+      main.addEventListener("click", function () { openConversation(c.id); });
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "chat-del-btn";
+      del.title = "Delete chat";
+      del.setAttribute("aria-label", "Delete chat");
+      del.innerHTML = TRASH_ICON;
+      del.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        deleteConversation(c.id, c.title);
+      });
+      row.appendChild(main);
+      row.appendChild(del);
+      chatsList.appendChild(row);
+    });
+  }
+
+  function loadConversations() {
+    return apiFetch("/conversations")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        conversations = (d && d.conversations) || [];
+        renderChatsList();
+        return conversations;
+      })
+      .catch(function () { return conversations; });
+  }
+
+  function openConversation(id) {
+    if (currentTaskId) {
+      showToast("Wait for the current task to finish, or stop it first.", true);
+      return;
+    }
+    currentConversationId = id;
+    clearChatBubbles();
+    closeModal(chatsModal);
+    renderChatsList();
+    loadChatHistory(id);
+    inputEl.focus();
+  }
+
+  function newConversation() {
+    if (currentTaskId) {
+      showToast("Wait for the current task to finish, or stop it first.", true);
+      return;
+    }
+    apiFetch("/conversations", { method: "POST" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        return loadConversations().then(function () {
+          openConversation(d.id);
+        });
+      })
+      .catch(function () {
+        showToast("Couldn't create a new chat — is the server running?", true);
+      });
+  }
+
+  function deleteConversation(id, title) {
+    if (currentTaskId && id === currentConversationId) {
+      showToast("Wait for the current task to finish, or stop it first.", true);
+      return;
+    }
+    if (!window.confirm('Delete chat "' + (title || "New chat") + '"? Its messages will be gone.')) return;
+    apiFetch("/conversations/" + id, { method: "DELETE" })
+      .then(function (r) { return r.json(); })
+      .then(function () { return loadConversations(); })
+      .then(function () {
+        if (id === currentConversationId) {
+          if (conversations.length) {
+            openConversation(conversations[0].id);
+          } else {
+            newConversation();
+          }
+        } else {
+          renderChatsList();
+        }
+      })
+      .catch(function () {
+        showToast("Couldn't delete the chat — try again.", true);
+      });
+  }
+
+  function initConversations() {
+    loadConversations().then(function () {
+      if (conversations.length) {
+        currentConversationId = conversations[0].id;
+        renderChatsList();
+        loadChatHistory(currentConversationId);
+      } else {
+        // First run ever — the server creates the first chat on demand.
+        loadChatHistory(null).then(loadConversations);
+      }
+    });
+  }
+
+  chatsBtn.addEventListener("click", function () {
+    loadConversations();
+    openModal(chatsModal);
+  });
+  chatsClose.addEventListener("click", function () { closeModal(chatsModal); });
+  newChatBtn.addEventListener("click", newConversation);
+  newChatBtn2.addEventListener("click", newConversation);
 
   // Composer grows as you type (up to 120px). The grow logic lives in
   // one place so typing and sending can never disagree about height.
@@ -922,7 +1084,7 @@
   refreshHealth();
   setInterval(refreshHealth, 30000);
   loadHealth(true); // Auto-show the Status panel on first run if broken.
-  loadChatHistory(); // v0.9: restore the saved chat below the welcome.
+  initConversations(); // side chats: open the most recent chat + its history.
   checkMessagingPending(); // Show the secure box if a setup is waiting.
   // The static welcome bubble gets its speaker button too.
   (function () {
