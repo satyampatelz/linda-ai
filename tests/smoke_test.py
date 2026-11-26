@@ -680,6 +680,14 @@ def test_gemini_reply_extraction():
     # Candidate stopped for SAFETY with no parts -> blocked.
     text, problem = f({"candidates": [{"finishReason": "SAFETY"}]})
     assert text is None and problem.startswith("blocked"), (text, problem)
+    # Thinking model spent its budget on thought parts -> empty, with the
+    # finish reason named so the cause is visible in the error/log.
+    text, problem = f({"candidates": [{
+        "finishReason": "MAX_TOKENS",
+        "content": {"parts": [{"thought": True, "text": "long thinking..."}]},
+    }]})
+    assert text is None, (text, problem)
+    assert problem == "empty (finishReason: MAX_TOKENS)", problem
 
 
 def test_gemini_empty_reply_retried():
@@ -768,11 +776,14 @@ def test_gemini_empty_reply_gives_up_cleanly():
             brain.chat([{"role": "user", "content": "hi"}], timeout=10)
         except brain.BrainError as e:
             assert "empty" in str(e), str(e)
+            assert "every model" in str(e), str(e)
             assert e.transient, "empty-reply error should be transient"
         else:
             raise AssertionError("BrainError was NOT raised for empty replies")
-        # 2 tries inside _chat_gemini x brain.chat's transient retry.
-        assert state["n"] == 4, state
+        # Per _chat_gemini call: 3 candidate models x 2 tries each (plain
+        # prompt, then nudged prompt) = 6; brain.chat retries the whole
+        # call once for transient errors -> 12 POSTs before giving up.
+        assert state["n"] == 12, state
     finally:
         (brain.GEMINI_API_URL, settings.model_provider,
          settings.gemini_api_key, settings.gemini_model) = orig
