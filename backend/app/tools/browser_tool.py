@@ -374,12 +374,26 @@ def live_shot_url() -> str:
 # Small models sometimes guess a wrong arg name ("link" for "url",
 # "element" for "selector"). The wrappers below accept the common aliases
 # (and ignore unknown extras) so one guessed name doesn't waste a step.
+_KNOWN_SITES = {
+    "kaggle": "https://www.kaggle.com",
+    "google": "https://www.google.com",
+    "youtube": "https://www.youtube.com",
+    "github": "https://github.com",
+    "gmail": "https://mail.google.com",
+    "internshala": "https://internshala.com",
+}
+
+
 def browser_open(url: str = "", link: str = "", website: str = "",
-                 address: str = "", href: str = "", **_extra) -> str:
+                 address: str = "", href: str = "", site: str = "",
+                 page: str = "", domain: str = "", **_extra) -> str:
     """Open a URL in the visible Chromium window."""
-    target = url or link or website or address or href
+    target = (url or link or website or address or href
+              or site or page or domain).strip()
     if not target:
         raise ValueError('browser_open needs a URL: args {"url": "https://..."}')
+    # A bare site name ("kaggle") maps to its home page.
+    target = _KNOWN_SITES.get(target.lower(), target)
     return browser.open(target)
 
 
