@@ -37,14 +37,14 @@ class _ChatMsg {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<_ChatMsg> _messages = [
-    _ChatMsg(
-      role: 'agent',
-      text:
-          'Hey! I\'m Linda — your personal AI agent.\n\n'
-          'Just tell me what you need, and I\'ll get it done.',
-    ),
-  ];
+  static _ChatMsg _welcome() => _ChatMsg(
+        role: 'agent',
+        text:
+            'Hey! I\'m Linda — your personal AI agent.\n\n'
+            'Just tell me what you need, and I\'ll get it done.',
+      );
+
+  final List<_ChatMsg> _messages = [_welcome()];
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
 
@@ -53,6 +53,11 @@ class _ChatScreenState extends State<ChatScreen> {
   List<TaskStep> _steps = [];
   PendingApproval? _pendingApproval;
   bool _sending = false;
+
+  // Side chats: the conversation currently open + all conversations
+  // (most recently active first), mirroring the PWA's Chats list.
+  int? _conversationId;
+  List<Conversation> _conversations = [];
 
   // Secure credential box (v0.7): pending token/ID requests, shown as
   // masked input cards in the chat. Dismissed ones stay hidden for
@@ -70,22 +75,52 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadChatHistory();
+    _initConversations();
     _checkMessagingPending();
   }
 
-  /// Restore the saved chat transcript (v0.9) below the welcome
-  /// bubble, so reopening the app shows the same chat. Failures are
-  /// silent — the chat just starts fresh with the welcome.
-  Future<void> _loadChatHistory() async {
-    List<ChatHistoryMessage> history;
+  /// Open the most recently active side chat (created server-side on
+  /// first run) and restore its transcript below the welcome bubble,
+  /// so reopening the app shows the same chat. Failures are silent —
+  /// the chat just starts fresh with the welcome.
+  Future<void> _initConversations() async {
+    await _loadConversations();
+    if (!mounted) return;
+    if (_conversations.isNotEmpty) {
+      await _openConversation(_conversations.first.id, silent: true);
+    } else {
+      await _loadChatHistory(null);
+      await _loadConversations();
+    }
+  }
+
+  Future<void> _loadConversations() async {
     try {
-      history = await widget.api.getChatHistory();
+      final convs = await widget.api.getConversations();
+      if (mounted) setState(() => _conversations = convs);
+    } catch (_) {
+      // server down — keep the list we have
+    }
+  }
+
+  /// Restore one side chat's saved transcript (v0.9) below the welcome
+  /// bubble. With no id, the server resolves (or creates) the chat.
+  Future<void> _loadChatHistory(int? conversationId) async {
+    (List<ChatHistoryMessage>, int?) result;
+    try {
+      result = await widget.api.getChatHistory(
+        conversationId: conversationId,
+      );
     } catch (_) {
       return; // server down — try again next time the app opens
     }
-    if (!mounted || history.isEmpty) return;
+    if (!mounted) return;
+    final (history, resolvedId) = result;
     setState(() {
+      if (resolvedId != null) _conversationId = resolvedId;
+      _messages
+        ..clear()
+        ..add(_welcome());
       for (final m in history) {
         if (m.role != 'user' && m.role != 'agent') continue;
         _messages.add(
@@ -100,6 +135,88 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     });
     _scrollToBottom();
+  }
+
+  /// Switch to another side chat. Blocked while a task runs — the
+  /// reply always lands in the chat it was sent from.
+  Future<void> _openConversation(int id, {bool silent = false}) async {
+    if (_taskId != null) {
+      if (!silent) {
+        _showError('Wait for the current task to finish, or stop it first.');
+      }
+      return;
+    }
+    _conversationId = id;
+    _steps = [];
+    _pendingApproval = null;
+    await _loadChatHistory(id);
+  }
+
+  Future<void> _newConversation() async {
+    if (_taskId != null) {
+      _showError('Wait for the current task to finish, or stop it first.');
+      return;
+    }
+    try {
+      final id = await widget.api.createConversation();
+      await _loadConversations();
+      await _openConversation(id);
+    } catch (e) {
+      _handleApiError(e);
+    }
+  }
+
+  Future<void> _deleteConversation(Conversation c) async {
+    if (_taskId != null && c.id == _conversationId) {
+      _showError('Wait for the current task to finish, or stop it first.');
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete chat?'),
+        content: Text(
+          'Delete chat "${c.title}"? Its messages will be gone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await widget.api.deleteConversation(c.id);
+      await _loadConversations();
+      if (c.id == _conversationId) {
+        if (_conversations.isNotEmpty) {
+          await _openConversation(_conversations.first.id);
+        } else {
+          await _newConversation();
+        }
+      }
+    } catch (e) {
+      _handleApiError(e);
+    }
+  }
+
+  String _formatChatDate(String iso) {
+    final d = DateTime.tryParse(iso)?.toLocal();
+    if (d == null) return '';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final hour = d.hour % 12 == 0 ? 12 : d.hour % 12;
+    final ampm = d.hour < 12 ? 'AM' : 'PM';
+    final minute = d.minute.toString().padLeft(2, '0');
+    return '${d.day} ${months[d.month - 1]}, $hour:$minute $ampm';
   }
 
   /// Ask the server if a messaging setup is waiting for credentials
@@ -180,8 +297,12 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _scrollToBottom();
     try {
-      final taskId = await widget.api.startChat(text);
+      final (taskId, conversationId) = await widget.api.startChat(
+        text,
+        conversationId: _conversationId,
+      );
       if (!mounted) return;
+      if (conversationId != null) _conversationId = conversationId;
       _taskId = taskId;
       setState(() => _sending = false);
       _startPolling();
@@ -260,6 +381,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (task.status == 'done') unawaited(_maybeAutoSpeak());
     // If this task asked for messaging credentials, show the secure box.
     unawaited(_checkMessagingPending());
+    // The chat's title/order may have changed — refresh the list.
+    unawaited(_loadConversations());
   }
 
   /// Auto-speak (Settings, default OFF): read a finished reply aloud.
@@ -433,11 +556,169 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Chats sheet (side chats): switch, start a new chat, or delete one.
+  void _openChatsSheet() {
+    unawaited(_loadConversations());
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.4,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xF2FFFFFF),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(18),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Chats',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const LindaIcon('close', size: 20),
+                              onPressed: () => Navigator.pop(sheetContext),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () async {
+                              Navigator.pop(sheetContext);
+                              await _newConversation();
+                            },
+                            icon: const LindaIcon(
+                              'plus',
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            label: const Text('New chat'),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _conversations.isEmpty
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24),
+                                  child: Text(
+                                    'No chats yet — start a new one.',
+                                    style: TextStyle(
+                                      color: LindaTheme.muted,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: scrollController,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                itemCount: _conversations.length,
+                                itemBuilder: (context, i) {
+                                  final c = _conversations[i];
+                                  final active = c.id == _conversationId;
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    color: active
+                                        ? const Color(0xFFEEF2FF)
+                                        : null,
+                                    child: ListTile(
+                                      title: Text(
+                                        c.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        '${_formatChatDate(c.updatedAt)}'
+                                        '${c.messageCount > 0 ? ' · ${c.messageCount} messages' : ''}',
+                                        style: const TextStyle(
+                                          color: LindaTheme.muted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const LindaIcon(
+                                          'trash',
+                                          size: 18,
+                                        ),
+                                        tooltip: 'Delete chat',
+                                        onPressed: () async {
+                                          await _deleteConversation(c);
+                                          setSheetState(() {});
+                                        },
+                                      ),
+                                      onTap: () async {
+                                        Navigator.pop(sheetContext);
+                                        await _openConversation(c.id);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final running = _taskId != null;
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: Row(
+            children: [
+              ActionChip(
+                avatar: const LindaIcon('chat', size: 18),
+                label: const Text('Chats'),
+                onPressed: _openChatsSheet,
+                backgroundColor: LindaTheme.glassStrong,
+              ),
+              const SizedBox(width: 8),
+              ActionChip(
+                avatar: const LindaIcon('plus', size: 18),
+                label: const Text('New chat'),
+                onPressed: () => unawaited(_newConversation()),
+                backgroundColor: LindaTheme.glassStrong,
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: ListView.builder(
             controller: _scroll,
