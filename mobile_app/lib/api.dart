@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -27,6 +28,7 @@ class TaskStep {
     required this.action,
     required this.thought,
     required this.result,
+    this.shot,
   });
 
   factory TaskStep.fromJson(Map<String, dynamic> j) {
@@ -35,6 +37,8 @@ class TaskStep {
       action: (j['action'] as String?) ?? '',
       thought: (j['thought'] as String?) ?? '',
       result: (j['result'] as String?) ?? '',
+      // Browser steps carry a live screenshot URL ("/browser/shot?t=...").
+      shot: j['shot'] as String?,
     );
   }
 
@@ -42,6 +46,7 @@ class TaskStep {
   final String action;
   final String thought;
   final String result;
+  final String? shot;
 }
 
 class PendingApproval {
@@ -280,6 +285,20 @@ class ApiClient {
         ? _config.baseUrl.substring(0, _config.baseUrl.length - 1)
         : _config.baseUrl;
     return Uri.parse('$base$path');
+  }
+
+  /// Fetch a browser-step screenshot (PNG bytes) for the live view.
+  /// Best-effort: returns null on any failure instead of throwing.
+  Future<Uint8List?> fetchShot(String path) async {
+    try {
+      final resp = await http
+          .get(_uri(path), headers: _headers)
+          .timeout(const Duration(seconds: 15));
+      if (resp.statusCode != 200) return null;
+      return resp.bodyBytes;
+    } catch (_) {
+      return null;
+    }
   }
 
   dynamic _decode(http.Response resp) {
