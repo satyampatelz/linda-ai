@@ -361,5 +361,11 @@ def run_all_checks() -> dict:
     return {
         "all_ok": not failed,
         "provider": settings.model_provider,
+        "model": (
+            settings.gemini_model
+            if settings.model_provider == "gemini"
+            else settings.ollama_model
+        ),
+        "gemini_key_set": bool(settings.gemini_api_key),
         "checks": checks,
     }
