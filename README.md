@@ -1,6 +1,6 @@
 # Linda — Your Personal AI Agent
 
-![Version](https://img.shields.io/badge/version-0.10.3-blue)
+![Version](https://img.shields.io/badge/version-0.11.0-blue)
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-yellow)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 ![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
@@ -11,7 +11,8 @@
 
 - **Chat + plan** — describe a task, Linda plans the steps, runs them, and shows a full step log
 - **Code + GitHub** — writes code, commits, and pushes (with your git credentials; no passwords stored)
-- **Browser** — works in a visible Chromium window, so you can watch it click, type, and read
+- **Browser** — works in Chromium shown live inside the chat: watch it click, type, and read in the browser panel
+- **Take control** — tap "Take control" on the browser panel to drive the browser yourself (CAPTCHAs, logins); Linda waits, then continues when you give it back
 - **Kaggle** — lists competitions and datasets, downloads data, submits
 - **Files + code** — reads/writes files, runs Python scripts, fixes errors and retries
 - **Voice** — talk to it and hear replies (mic + speaker, free; in the web app, voice input uses Chrome's speech service, so it needs Chrome + internet)
@@ -59,6 +60,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Version
 
+**v0.11.0** (28 Nov 2026) — In-chat browser panel with Take control: the browser lives inside the chat (no separate window), and you can drive it yourself for CAPTCHAs/logins while Linda waits.
 **v0.10.3** (25 Nov 2026) — Agent discipline fix: the agent no longer runs files it hasn't written, never invents repo URLs, stops after two failed approaches instead of burning all 15 steps, and mirrors the user's language (Hinglish in, Hinglish out). Git never prompts for credentials anymore.
 **v0.10.2** (24 Nov 2026) — Everything in English now.
 **v0.10.1** (24 Nov 2026) — Language release: docs and app strings in English.

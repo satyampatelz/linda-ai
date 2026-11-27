@@ -1,3 +1,13 @@
+# Delivery Notes — Linda v0.11.0
+
+Built 28 Nov 2026. Source: `~/workspace/satyam-ai/`.
+
+## What's new in v0.11.0 (in-chat browser panel with Take control)
+
+v0.11.0 (28 Nov 2026) — the browser now lives INSIDE the chat. Panel mode is the default (headless): no separate Chrome window pops up on top of the chat any more — the chat shows a live browser panel with the current page, its URL, and a **Take control** button. Tap it and your clicks, typing and scrolling go straight into the browser (for CAPTCHAs, logins, anything only a human can do); Linda waits while you drive, then continues when you tap **Give back to Linda**. Changes: `BrowserSession` gained a `user_controlled` flag with input forwarding (click/type/key/scroll in the 1280x800 viewport) and `live_state()`; new endpoints `GET /browser/state`, `POST /browser/control`, `POST /browser/input` (input honoured only in control mode, else 409); the agent waits before browser steps while the user has control (~5 min max, then carries on) and the system prompt now points at the panel's Take control button for CAPTCHA/login walls; the PWA panel gained a URL bar, status text, control button, typing row, accent glow in control mode, ~1s state + ~700ms frame polling (lightbox stays watch-mode only); the Flutter app got the same panel (live frame, Take control/Give back, tap-to-click, typing row). `browser_headless` now defaults to true (panel mode) — Settings can still switch to a visible on-screen window. OTP rules and the persistent profile are unchanged. Version 0.11.0, service-worker cache v22.
+
+---
+
 # Delivery Notes — Linda v0.10.3
 
 Built 25 Nov 2026. Source: `~/workspace/satyam-ai/`.
