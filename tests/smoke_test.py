@@ -1,4 +1,4 @@
-"""Smoke tests for Linda v0.10.3.
+"""Smoke tests for Linda v0.11.0.
 
 Run (venv active, from the project root):
     python tests/smoke_test.py
@@ -74,6 +74,12 @@ Covers, without touching any real service:
     local URLs, waits on /health, opens an app-mode window with a
     Chrome/Edge fallback; create-shortcut.ps1 builds the Desktop
     shortcut with the multi-size S-logo .ico + -AutoStart flag)
+
+  * v0.11 in-chat browser panel with Take control: control state
+    transitions, live_state shape, panel input forwarding (click/type/
+    key/scroll into a stub page), /browser/state + /browser/control +
+    /browser/input endpoints (input rejected with 409 while the agent
+    has control), and the panel wiring in the PWA + Flutter app
 
 Exit code 0 = all passed (skips are fine, they print SKIP).
 """
@@ -373,7 +379,7 @@ def test_pwa_voice_wiring():
                  "Listening…", "autoSpeakEnabled"):
         assert want in js, f"app.js missing {want}"
     sw = (static / "sw.js").read_text()
-    assert "linda-shell-v21" in sw, "service worker cache not bumped to v21"
+    assert "linda-shell-v22" in sw, "service worker cache not bumped to v22"
     # The Flutter app declares the voice packages.
     pubspec = (ROOT / "mobile_app" / "pubspec.yaml").read_text()
     assert "speech_to_text:" in pubspec, "pubspec missing speech_to_text"
@@ -385,7 +391,7 @@ def test_pwa_voice_wiring():
     client = _client()
     resp = client.get("/health")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["version"] == "0.10.3", resp.text
+    assert resp.json()["version"] == "0.11.0", resp.text
 
     # --- v0.5: demo chips removed (PWA + Flutter) ---
     for gone in ("demoChips", 'class="chip"', "DemoChips", "_DemoChips"):
@@ -859,6 +865,193 @@ def test_pwa_browser_live_wiring():
     )
     assert "fetchShot" in dart, "Flutter missing fetchShot"
     assert "step.shot" in dart, "Flutter step card does not show the shot"
+
+
+# --- v0.11: in-chat browser panel with Take control ---
+class _FakeMouse:
+    def __init__(self, calls):
+        self.calls = calls
+
+    def click(self, x, y):
+        self.calls.append(("click", x, y))
+
+    def wheel(self, dx, dy):
+        self.calls.append(("wheel", dx, dy))
+
+
+class _FakeKeyboard:
+    def __init__(self, calls):
+        self.calls = calls
+
+    def type(self, text):
+        self.calls.append(("type", text))
+
+    def press(self, key):
+        self.calls.append(("press", key))
+
+
+class _FakePage:
+    """Minimal stand-in for a Playwright page (panel input tests) —
+    records mouse/keyboard calls, no real browser needed."""
+
+    def __init__(self):
+        self.calls = []
+        self.mouse = _FakeMouse(self.calls)
+        self.keyboard = _FakeKeyboard(self.calls)
+        self.url = "https://example.com/login"
+
+    def title(self):
+        return "Example Login"
+
+    def wait_for_timeout(self, ms):
+        pass
+
+    def screenshot(self, path=None):
+        Path(path).write_bytes(b"\x89PNG\r\n\x1a\nfake")
+
+
+def test_browser_control_state():
+    """Take control / give back flips the flag, and live_state() has the
+    panel's shape (open/url/title/user_controlled) with no browser open."""
+    from backend.app.tools import browser_tool
+
+    session = browser_tool.BrowserSession()
+    assert session.is_user_controlled() is False
+    state = session.live_state()
+    assert set(state) == {"open", "url", "title", "user_controlled"}, state
+    assert state["open"] is False and state["url"] == "" and state["title"] == ""
+    assert state["user_controlled"] is False
+
+    state = session.take_control()
+    assert session.is_user_controlled() is True
+    assert state["user_controlled"] is True
+
+    state = session.release_control()
+    assert session.is_user_controlled() is False
+    assert state["user_controlled"] is False
+
+
+def test_browser_user_input_forwarding():
+    """Panel input (click/type/key/scroll) reaches the page in the
+    1280x800 viewport space, and live_state reports the open page."""
+    from backend.app.config import settings
+    from backend.app.tools import browser_tool
+
+    shots = settings.workspace_dir / "screenshots"
+    live = shots / "live.png"
+    shots.mkdir(parents=True, exist_ok=True)
+    backup = live.read_bytes() if live.exists() else None
+    try:
+        session = browser_tool.BrowserSession()
+        fake = _FakePage()
+        session._page = fake
+
+        session.user_click(100, 200)
+        session.user_type("hello")
+        session.user_key("Enter")
+        session.user_scroll(300)
+        assert ("click", 100.0, 200.0) in fake.calls, fake.calls
+        assert ("type", "hello") in fake.calls, fake.calls
+        assert ("press", "Enter") in fake.calls, fake.calls
+        assert ("wheel", 0, 300.0) in fake.calls, fake.calls
+
+        state = session.live_state()
+        assert state["open"] is True
+        assert state["url"] == "https://example.com/login"
+        assert state["title"] == "Example Login"
+
+        # The module-level dispatcher routes by type and rejects junk.
+        browser_tool.browser._page = fake
+        try:
+            browser_tool.user_input("click", x=5, y=6)
+            assert ("click", 5.0, 6.0) in fake.calls, fake.calls
+            try:
+                browser_tool.user_input("teleport")
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("user_input should reject unknown types")
+        finally:
+            browser_tool.browser._page = None
+    finally:
+        if backup is None:
+            live.unlink(missing_ok=True)
+        else:
+            live.write_bytes(backup)
+
+
+def test_browser_panel_endpoints():
+    """/browser/state shape, /browser/control take+release, and
+    /browser/input rejected (409) while the agent has control."""
+    from backend.app.tools import browser_tool
+
+    browser_tool.browser_close()
+    client = _client()
+    fake = _FakePage()
+    try:
+        resp = client.get("/browser/state")
+        assert resp.status_code == 200, resp.text
+        state = resp.json()
+        assert set(state) == {"open", "url", "title", "user_controlled"}, state
+        assert state["user_controlled"] is False
+
+        # Input without control -> 409, and nothing reaches the page.
+        browser_tool.browser._page = fake
+        resp = client.post("/browser/input",
+                           json={"type": "click", "x": 10, "y": 20})
+        assert resp.status_code == 409, resp.text
+        assert fake.calls == [], fake.calls
+
+        # Take control -> input is forwarded.
+        resp = client.post("/browser/control", json={"action": "take"})
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["user_controlled"] is True
+        resp = client.post("/browser/input",
+                           json={"type": "click", "x": 10, "y": 20})
+        assert resp.status_code == 200, resp.text
+        assert ("click", 10.0, 20.0) in fake.calls, fake.calls
+        resp = client.post("/browser/input",
+                           json={"type": "type", "text": "hi"})
+        assert resp.status_code == 200, resp.text
+        assert ("type", "hi") in fake.calls, fake.calls
+
+        # Give back -> input rejected again.
+        resp = client.post("/browser/control", json={"action": "release"})
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["user_controlled"] is False
+        resp = client.post("/browser/input", json={"type": "key", "key": "Enter"})
+        assert resp.status_code == 409, resp.text
+
+        # Bad action -> 400 with a plain message.
+        resp = client.post("/browser/control", json={"action": "steal"})
+        assert resp.status_code == 400, resp.text
+    finally:
+        browser_tool.browser_close()
+
+
+def test_pwa_browser_panel_wiring():
+    """The interactive panel is wired into the shipped PWA + Flutter
+    app: URL bar, Take control button and typing row in index.html,
+    state/control/input calls in app.js, control glow in style.css,
+    and the Flutter panel with the same endpoints."""
+    static = ROOT / "backend" / "static"
+    html = (static / "index.html").read_text()
+    for want in ('id="browserLiveUrl"', 'id="browserLiveStatus"',
+                 'id="browserControlBtn"', 'id="browserTypeRow"',
+                 "Take control"):
+        assert want in html, f"index.html missing {want}"
+    js = (static / "app.js").read_text()
+    for want in ("/browser/state", "/browser/control", "/browser/input",
+                 "Give back to Linda", "You have control"):
+        assert want in js, f"app.js missing {want}"
+    css = (static / "style.css").read_text()
+    assert ".browser-live.controlled" in css, "style.css missing control glow"
+    dart = "".join(
+        p.read_text() for p in (ROOT / "mobile_app" / "lib").rglob("*.dart")
+    )
+    for want in ("BrowserState", "browserControl", "browserInput",
+                 "Take control", "Give back to Linda"):
+        assert want in dart, f"Flutter missing {want}"
 
 
 # --- v0.6: messaging (official Meta APIs, mock payloads only) ---
@@ -2463,6 +2656,10 @@ if __name__ == "__main__":
     check("browser_live_view", test_browser_live_view)
     check("browser_tool_arg_aliases", test_browser_tool_arg_aliases)
     check("pwa_browser_live_wiring", test_pwa_browser_live_wiring)
+    check("browser_control_state", test_browser_control_state)
+    check("browser_user_input_forwarding", test_browser_user_input_forwarding)
+    check("browser_panel_endpoints", test_browser_panel_endpoints)
+    check("pwa_browser_panel_wiring", test_pwa_browser_panel_wiring)
     check("kaggle_no_creds", test_kaggle_no_creds)
     check("browser_headless", test_browser_headless)
     check("health_endpoint", test_health_endpoint)
