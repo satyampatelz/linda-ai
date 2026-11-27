@@ -49,6 +49,30 @@ class TaskStep {
   final String? shot;
 }
 
+/// State of the in-chat browser panel (GET /browser/state).
+class BrowserState {
+  BrowserState({
+    required this.open,
+    required this.url,
+    required this.title,
+    required this.userControlled,
+  });
+
+  factory BrowserState.fromJson(Map<String, dynamic> j) {
+    return BrowserState(
+      open: j['open'] == true,
+      url: (j['url'] as String?) ?? '',
+      title: (j['title'] as String?) ?? '',
+      userControlled: j['user_controlled'] == true,
+    );
+  }
+
+  final bool open;
+  final String url;
+  final String title;
+  final bool userControlled;
+}
+
 class PendingApproval {
   PendingApproval({required this.action, required this.detail});
 
@@ -296,6 +320,40 @@ class ApiClient {
           .timeout(const Duration(seconds: 15));
       if (resp.statusCode != 200) return null;
       return resp.bodyBytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Current browser-panel state. Best-effort: null on any failure.
+  Future<BrowserState?> browserState() async {
+    try {
+      final data = await _get('/browser/state');
+      if (data is Map<String, dynamic>) return BrowserState.fromJson(data);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Take control of the browser panel / give it back ("take"/"release").
+  Future<BrowserState?> browserControl(String action) async {
+    try {
+      final data = await _post('/browser/control', {'action': action});
+      if (data is Map<String, dynamic>) return BrowserState.fromJson(data);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Forward one panel interaction (click/type/key/scroll) into the
+  /// page. Only honoured while the user has control.
+  Future<BrowserState?> browserInput(Map<String, dynamic> input) async {
+    try {
+      final data = await _post('/browser/input', input);
+      if (data is Map<String, dynamic>) return BrowserState.fromJson(data);
+      return null;
     } catch (_) {
       return null;
     }
