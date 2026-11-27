@@ -1,22 +1,31 @@
-"""Browser tools — Playwright-driven Chromium, VISIBLE by default.
+"""Browser tools — Playwright-driven Chromium, inside the chat by default.
 
-The browser opens on screen so you (and your friends) can watch the agent
-click, type and read, just like a human. Change visible/headless from the
-Settings screen (⚙️) in the app — no file editing needed.
+PANEL MODE (v0.11, the default): the browser runs headless in the
+background and lives INSIDE the chat — the chat shows a live browser
+panel with the current page, its URL, and a "Take control" button.
+Tap "Take control" and your clicks, typing and scrolling go straight
+into the browser (for CAPTCHAs, logins, anything only a human can do);
+tap "Give back to Linda" and the agent continues where you left off.
+While you have control, the agent waits — it never fights you for the
+browser. Change visible/headless from the Settings screen (⚙️) in the
+app — no file editing needed: switch to "Visible" and the browser
+opens as a real window on screen instead (the panel still works).
 
 The browser uses a PERSISTENT profile (data/browser-profile/, git-ignored):
 logins and cookies survive restarts, so once you sign in to Google in the
 agent's browser, "Sign in with Google" on other sites just works — no
 re-typing passwords every time. First Google sign-in is done once by you,
-in the visible browser.
+in the browser panel (Take control) or the visible browser.
 
 The agent drives sites generically: it opens a page, reads its text and
 links, and plans the next click/type from what it sees. There are no
 hardcoded selectors for any site — see site-profiles.yaml for optional
 per-site notes you can fill in yourself.
 
-Honest limits: CAPTCHAs cannot be solved by the agent (the user solves
-them in the visible browser). OTPs CAN be filled by the agent, two ways:
+Honest limits: CAPTCHAs cannot be solved by the agent — the user taps
+"Take control" on the browser panel in the chat, solves the CAPTCHA
+(or login) there, then taps "Give back to Linda". OTPs CAN be filled
+by the agent, two ways:
 EMAIL OTPs are read from the user's Gmail and filled automatically
 (needs the Gmail setup from GMAIL_SETUP.md); SMS OTPs cannot be read
 (Linda has no SMS access), so the agent ASKS the user in chat for the
@@ -45,12 +54,23 @@ _OTP_FIELD_SELECTORS = [
 
 class BrowserSession:
     """One reusable Chromium window, on a persistent profile. Launched
-    lazily on first use; logins survive server restarts."""
+    lazily on first use; logins survive server restarts.
+
+    Panel mode (v0.11): the browser runs headless by default and shows
+    inside the chat as a live panel. The user can take control of it
+    from the panel (clicks/typing/scrolling forwarded here); while
+    `user_controlled` is set, the agent waits instead of driving."""
+
+    # The page viewport the panel maps clicks into (CSS pixels).
+    VIEWPORT_WIDTH = 1280
+    VIEWPORT_HEIGHT = 800
 
     def __init__(self):
         self._playwright = None
         self._context = None
         self._page = None
+        # True while the user is driving the browser from the chat panel.
+        self._user_controlled = False
 
     @property
     def profile_dir(self) -> Path:
@@ -69,7 +89,8 @@ class BrowserSession:
             self._context = self._playwright.chromium.launch_persistent_context(
                 user_data_dir=str(self.profile_dir),
                 headless=settings.browser_headless,
-                viewport={"width": 1280, "height": 800},
+                viewport={"width": self.VIEWPORT_WIDTH,
+                          "height": self.VIEWPORT_HEIGHT},
             )
             pages = self._context.pages
             self._page = pages[0] if pages else self._context.new_page()
@@ -156,6 +177,79 @@ class BrowserSession:
             return True
         except Exception:  # noqa: BLE001 — live view is decoration, not the task
             return False
+
+    # -- user control (in-chat browser panel, v0.11) -------------------
+    # The chat's browser panel can hand the browser to the user: while
+    # `user_controlled` is set, the panel forwards the user's clicks,
+    # typing and scrolling into the page, and the agent waits (agent.py
+    # polls is_user_controlled() before every browser step). Coordinates
+    # are in the 1280x800 viewport space — the UI maps its displayed
+    # image size onto that.
+    def take_control(self) -> dict:
+        """Hand the browser to the user (panel "Take control")."""
+        self._user_controlled = True
+        return self.live_state()
+
+    def release_control(self) -> dict:
+        """Give the browser back to the agent ("Give back to Linda")."""
+        self._user_controlled = False
+        return self.live_state()
+
+    def is_user_controlled(self) -> bool:
+        return self._user_controlled
+
+    def live_state(self) -> dict:
+        """Panel state: is a page open, where is it, who is driving.
+        Never raises — the panel polls this every second."""
+        state = {
+            "open": self._page is not None,
+            "url": "",
+            "title": "",
+            "user_controlled": self._user_controlled,
+        }
+        if self._page is not None:
+            try:
+                state["url"] = self._page.url or ""
+                state["title"] = self._page.title() or ""
+            except Exception:  # noqa: BLE001 — page may be mid-navigation
+                pass
+        return state
+
+    def _after_user_input(self):
+        """Let the page react, then refresh the panel's live frame."""
+        try:
+            self._page.wait_for_timeout(350)
+        except Exception:  # noqa: BLE001
+            pass
+        self.live_shot()
+
+    def user_click(self, x: float, y: float) -> str:
+        """A click from the panel, in 1280x800 viewport coordinates."""
+        page = self._ensure_page()
+        page.mouse.click(float(x), float(y))
+        self._after_user_input()
+        return f"Clicked at ({int(x)}, {int(y)})."
+
+    def user_type(self, text: str) -> str:
+        """Text typed in the panel's typing row, sent as keystrokes."""
+        page = self._ensure_page()
+        page.keyboard.type(str(text))
+        self._after_user_input()
+        return f"Typed {len(str(text))} characters."
+
+    def user_key(self, key: str) -> str:
+        """A single key from the panel (Enter, Tab, Escape, …)."""
+        page = self._ensure_page()
+        page.keyboard.press(str(key))
+        self._after_user_input()
+        return f"Pressed key: {key}."
+
+    def user_scroll(self, dy: float) -> str:
+        """Mouse-wheel scroll from the panel (dy in CSS pixels)."""
+        page = self._ensure_page()
+        page.mouse.wheel(0, float(dy))
+        self._after_user_input()
+        return "Scrolled."
 
     # -- form filling -------------------------------------------------
     def _find_field(self, page, field: dict):
@@ -352,6 +446,7 @@ class BrowserSession:
         self._playwright = None
         self._context = None
         self._page = None
+        self._user_controlled = False
         return "Browser closed."
 
 
@@ -368,6 +463,41 @@ def live_shot_url() -> str:
     if browser.live_shot():
         return f"/browser/shot?t={int(time.time() * 1000)}"
     return ""
+
+
+# -- Panel control (used by the /browser/state|control|input endpoints) ---
+def live_state() -> dict:
+    """Current panel state (open/url/title/user_controlled)."""
+    return browser.live_state()
+
+
+def take_control() -> dict:
+    """Hand the browser to the user from the chat panel."""
+    return browser.take_control()
+
+
+def release_control() -> dict:
+    """Give the browser back to the agent."""
+    return browser.release_control()
+
+
+def is_user_controlled() -> bool:
+    return browser.is_user_controlled()
+
+
+def user_input(kind: str, x: float = 0, y: float = 0, text: str = "",
+               key: str = "", dy: float = 0) -> str:
+    """Forward one panel interaction into the page. The endpoint only
+    calls this while the user has control."""
+    if kind == "click":
+        return browser.user_click(x, y)
+    if kind == "type":
+        return browser.user_type(text)
+    if kind == "key":
+        return browser.user_key(key)
+    if kind == "scroll":
+        return browser.user_scroll(dy)
+    raise ValueError(f"Unknown browser input type: {kind!r}")
 
 
 # -- Plain functions the agent calls --------------------------------------
@@ -387,7 +517,7 @@ _KNOWN_SITES = {
 def browser_open(url: str = "", link: str = "", website: str = "",
                  address: str = "", href: str = "", site: str = "",
                  page: str = "", domain: str = "", **_extra) -> str:
-    """Open a URL in the visible Chromium window."""
+    """Open a URL in the browser (shown live in the chat panel)."""
     target = (url or link or website or address or href
               or site or page or domain).strip()
     if not target:
