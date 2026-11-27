@@ -17,6 +17,7 @@ import json
 import logging
 import re
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -64,7 +65,7 @@ TOOL_SPECS = [
      "desc": 'Clone a repo. args: {"url": "https://github.com/...", "path": "local folder"}'},
     # Browser (visible Chromium)
     {"name": "browser_open", "fn": browser_tool.browser_open,
-     "desc": 'Open a URL in the visible browser. args: {"url": "https://..."}'},
+     "desc": 'Open a URL in the browser (shown live in the chat panel). args: {"url": "https://..."}'},
     {"name": "browser_read", "fn": browser_tool.browser_read,
      "desc": 'Read the current page text + first 30 links. args: {}'},
     {"name": "browser_click", "fn": browser_tool.browser_click,
@@ -137,7 +138,7 @@ RULES
 - For multi-part tasks, break them into steps and do them in order.
 - File paths for files_write/files_read/run_python are relative to the workspace folder.
 - For GitHub: write the code first, then github_init, github_add_commit, github_remote_add (only if the user gave a repo URL), then github_push.
-- For browser tasks: browser_open, then browser_read to see the page, then click/type based on what you actually see. If a task names a site (e.g. "Internshala check karo"), first read site-profiles.yaml with files_read — it has plain-word notes (login URL, where things live) for known sites. If a CAPTCHA appears, stop and tell the user in your finish answer — they solve it in the visible browser, then tell you to continue. OTPs are different: EMAIL OTPs — read the code from Gmail (find_otp) and fill it yourself (browser_fill_otp) — never ask the user for an email OTP. SMS OTPs — Gmail can't provide those, so ask the user for the code in chat (in your finish answer, ask for the SMS OTP in whatever language they are chatting in), don't close the browser (the OTP page stays open), and when the user sends the code, fill it yourself with browser_fill_otp, then continue the task. Never repeat the code in your answer, and never save it to memory.
+- For browser tasks: browser_open, then browser_read to see the page, then click/type based on what you actually see. If a task names a site (e.g. "Internshala check karo"), first read site-profiles.yaml with files_read — it has plain-word notes (login URL, where things live) for known sites. If a CAPTCHA or login wall appears, stop and tell the user in your finish answer (in their language) to tap "Take control" on the browser panel in the chat, solve it there, then tap "Give back to Linda" — then tell you to continue. OTPs are different: EMAIL OTPs — read the code from Gmail (find_otp) and fill it yourself (browser_fill_otp) — never ask the user for an email OTP. SMS OTPs — Gmail can't provide those, so ask the user for the code in chat (in your finish answer, ask for the SMS OTP in whatever language they are chatting in), don't close the browser (the OTP page stays open), and when the user sends the code, fill it yourself with browser_fill_otp, then continue the task. Never repeat the code in your answer, and never save it to memory.
 - If the user only asked a question (no task), answer directly with a finish action — no tools needed.
 - Keep answers short.
 - Reply in the same language and script the user used in their message — from their very first message, no matter what language they start in; default to English when unclear. Mirror it exactly: Hinglish in, Hinglish out; Hindi in, Hindi out. Never answer in English when the user wrote in Hinglish.
@@ -156,7 +157,8 @@ GMAIL (read-only — you read mail, never send/delete/modify)
 - OTP: when a site asks for an OTP during a browser task, FIRST check Gmail — call find_otp with the site name ("Internshala"), then browser_fill_otp to fill it. EMAIL OTPs are fully automatic this way — never ask the user for one. If no OTP email arrived in Gmail, it is probably an SMS OTP: finish with ONE short message asking for it (ask for the SMS OTP in whatever language the user is chatting in) and do NOT close the browser — the OTP page stays open in the persistent browser session. When the user replies with the code, fill it yourself with browser_fill_otp and the code (args: {{"code": "482916"}}), then continue the task (click Verify/Submit). If the user's message is just a 4–8 digit code, treat it as the SMS OTP you asked for: check the page with browser_read, fill the code, continue. NEVER repeat the code in your answer, never save it with memory_remember, never write it to a file — use it once for the fill and forget it.
 
 BROWSER — FORMS + GOOGLE SIGN-IN
-- The browser keeps a persistent profile: once the user has signed in to Google once in the agent's browser, "Sign in with Google" / "Login with Google" buttons on sites work without re-typing anything — just click them. If Google asks to sign in again, tell the user once to sign in himself in the visible browser (first time only), then continue.
+- The browser lives in a live panel inside the chat with a "Take control" button. For anything only a human can do (CAPTCHA, a login wall, a tricky form), tell the user in their language to tap "Take control" on the browser panel, do it themselves, then tap "Give back to Linda" — you wait automatically while they have control.
+- The browser keeps a persistent profile: once the user has signed in to Google once in the agent's browser, "Sign in with Google" / "Login with Google" buttons on sites work without re-typing anything — just click them. If Google asks to sign in again, tell the user once to sign in himself with "Take control" on the browser panel (first time only), then continue.
 - To fill a form ("ye form bhar do", "is site pe apply kar do"): use browser_fill_form with the page URL and a list of fields — each field needs a "value" and a "label", "name", or "placeholder" to find it. After submitting, browser_read the result page and report what happened (success / error / next step).
 - Never invent form values the user did not give you — if a field needs information you do not have, fill what you know and tell the user what is still empty.
 
@@ -402,6 +404,47 @@ def _stop_now(task_id: str, user_message: str) -> bool:
     return True
 
 
+# How long the agent waits while the user drives the browser from the
+# in-chat panel ("Take control") before carrying on anyway.
+_BROWSER_CONTROL_WAIT_SECS = 300
+
+
+def _wait_for_browser_control(task_id: str, user_message: str,
+                              step_no: int, thought: str) -> bool:
+    """Wait while the user has taken control of the browser panel.
+
+    Called before every browser step. If the user is driving (solving a
+    CAPTCHA, logging in), log one "waiting" step, then poll about once
+    a second until they tap "Give back to Linda" — up to ~5 minutes,
+    after which the agent carries on anyway (and says so). A Stop
+    request during the wait still stops the task. Returns True if the
+    loop should exit (task stopped)."""
+    if not browser_tool.is_user_controlled():
+        return False
+    task_store.add_step(task_id, {
+        "n": step_no, "thought": thought,
+        "action": "browser_wait", "args": {},
+        "result": "You have control — Linda is waiting. Tap "
+                  "'Give back to Linda' on the browser panel when "
+                  "you're done.",
+    })
+    waited = 0
+    while browser_tool.is_user_controlled():
+        if _stop_now(task_id, user_message):
+            return True
+        if waited >= _BROWSER_CONTROL_WAIT_SECS:
+            task_store.add_step(task_id, {
+                "n": step_no, "thought": "",
+                "action": "browser_wait", "args": {},
+                "result": "Still in control after 5 minutes — "
+                          "continuing anyway.",
+            })
+            return False
+        time.sleep(1)
+        waited += 1
+    return False
+
+
 def _run_task_inner(task_id: str, user_message: str):
     # What gets logged to the DB: the user's message with any OTP code
     # masked (the LLM still gets the original — it needs the digits).
@@ -503,6 +546,13 @@ def _run_task_inner(task_id: str, user_message: str):
                 messages.append({"role": "assistant", "content": raw})
                 messages.append({"role": "user", "content": f"Observation: {observation}"})
                 continue
+
+        # Browser panel: if the user took control, wait for them to
+        # give it back before driving the browser again.
+        if action.startswith("browser_"):
+            if _wait_for_browser_control(task_id, user_message,
+                                         step_no, thought):
+                return
 
         # Run the tool.
         try:

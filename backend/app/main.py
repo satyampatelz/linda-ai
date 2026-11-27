@@ -19,6 +19,9 @@ API:
   GET  /tasks                   recent tasks
   POST /tasks/{id}/approve {"approve": true|false}   (ask mode only)
   POST /tasks/{id}/stop         ask a running task to stop
+  GET  /browser/state           browser panel state (open/url/title/control)
+  POST /browser/control         {"action": "take"|"release"} panel Take control
+  POST /browser/input           forward a panel click/type/key/scroll (control mode only)
   GET  /memory                  saved facts
   GET  /messaging/pending       outstanding secure-box credential requests
   POST /messaging/credentials   save a messaging token/ID from the secure box
@@ -61,7 +64,7 @@ from .config import (MESSAGING_CREDENTIAL_KEYS, mask_secret,
                      save_messaging_credentials, save_settings, settings)
 from .messaging import store as messaging_store
 from .messaging import webhooks as messaging_webhooks
-from .tools import messaging_tool
+from .tools import browser_tool, messaging_tool
 
 logging.basicConfig(
     level=logging.INFO,
@@ -164,6 +167,41 @@ class ChatRequest(BaseModel):
 
 class ApproveRequest(BaseModel):
     approve: bool
+
+
+class BrowserControlRequest(BaseModel):
+    """Panel "Take control" / "Give back to Linda"."""
+
+    action: str
+
+    @field_validator("action")
+    @classmethod
+    def _check_action(cls, v):
+        v = (v or "").strip().lower()
+        if v not in ("take", "release"):
+            raise ValueError("action must be 'take' or 'release'.")
+        return v
+
+
+class BrowserInputRequest(BaseModel):
+    """One forwarded interaction from the browser panel. Coordinates are
+    in the 1280x800 viewport space; only the fields for the given type
+    are used."""
+
+    type: str
+    x: float = 0
+    y: float = 0
+    text: str = ""
+    key: str = ""
+    dy: float = 0
+
+    @field_validator("type")
+    @classmethod
+    def _check_type(cls, v):
+        v = (v or "").strip().lower()
+        if v not in ("click", "type", "key", "scroll"):
+            raise ValueError("type must be 'click', 'type', 'key', or 'scroll'.")
+        return v
 
 
 class SettingsRequest(BaseModel):
@@ -387,6 +425,47 @@ def browser_shot():
     return FileResponse(
         path, media_type="image/png", headers={"Cache-Control": "no-store"}
     )
+
+
+@app.get("/browser/state")
+def browser_state():
+    """State of the in-chat browser panel: whether a page is open, its
+    URL + title, and who is driving (agent or user). The panel polls
+    this about once a second while it is visible."""
+    return browser_tool.live_state()
+
+
+@app.post("/browser/control")
+def browser_control(req: BrowserControlRequest):
+    """Take control / give it back. While the user has control, the
+    agent waits before its next browser step (agent.py) and the panel
+    forwards the user's clicks/typing via /browser/input."""
+    if req.action == "take":
+        return browser_tool.take_control()
+    return browser_tool.release_control()
+
+
+@app.post("/browser/input")
+def browser_input(req: BrowserInputRequest):
+    """Forward one panel interaction (click/type/key/scroll) into the
+    page. Only honoured while the user has control — otherwise 409, so
+    a stray tap can never fight the agent for the browser. Returns the
+    fresh panel state either way."""
+    if not browser_tool.is_user_controlled():
+        return JSONResponse(
+            status_code=409,
+            content={"detail": "You don't have control of the browser — "
+                               "tap 'Take control' first.",
+                     **browser_tool.live_state()},
+        )
+    try:
+        browser_tool.user_input(
+            req.type, x=req.x, y=req.y, text=req.text,
+            key=req.key, dy=req.dy,
+        )
+    except Exception:  # noqa: BLE001 — panel input is best-effort
+        logger.warning("Browser panel input failed", exc_info=True)
+    return browser_tool.live_state()
 
 
 @app.get("/tasks")

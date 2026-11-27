@@ -88,7 +88,7 @@ def _default_data_dir() -> Path:
 
 class Settings:
     app_name = "Linda"
-    app_version = "0.10.3"
+    app_version = "0.11.0"
 
     # Class-level defaults (also used before __init__ runs). Live values
     # always live on the instance — refresh() updates instance attributes,
@@ -100,7 +100,7 @@ class Settings:
     gemini_api_key = ""
     gemini_model = "gemini-2.5-flash"
     approval_mode = "auto"
-    browser_headless = False
+    browser_headless = True
     max_steps = 15
     host = "127.0.0.1"
     port = 8000
@@ -157,9 +157,12 @@ class Settings:
         # wait for a one-click Approve/Reject in the UI. Nothing else is
         # ever blocked.
         self.approval_mode = os.getenv("APPROVAL_MODE", "auto").strip().lower()
-        # Headed (visible) by default so you can watch the agent work.
+        # Headless (panel mode) by default: the browser lives inside the
+        # chat as a live panel with a "Take control" button, so no
+        # separate window pops up. Settings can switch it back to a
+        # visible on-screen window.
         self.browser_headless = (
-            os.getenv("BROWSER_HEADLESS", "false").strip().lower() == "true"
+            os.getenv("BROWSER_HEADLESS", "true").strip().lower() == "true"
         )
         self.max_steps = _int_env("MAX_AGENT_STEPS", 15)
         # Server API token — env-only, never in the Settings UI.
