@@ -9,6 +9,13 @@
   var stepsClose = document.getElementById("stepsClose");
   var browserLive = document.getElementById("browserLive");
   var browserLiveImg = document.getElementById("browserLiveImg");
+  var browserLiveStatus = document.getElementById("browserLiveStatus");
+  var browserLiveUrl = document.getElementById("browserLiveUrl");
+  var browserControlBtn = document.getElementById("browserControlBtn");
+  var browserTypeRow = document.getElementById("browserTypeRow");
+  var browserTypeInput = document.getElementById("browserTypeInput");
+  var browserTypeSend = document.getElementById("browserTypeSend");
+  var browserKeyEnter = document.getElementById("browserKeyEnter");
   var shotLightbox = document.getElementById("shotLightbox");
   var shotLightboxImg = document.getElementById("shotLightboxImg");
   var backdrop = document.getElementById("sheetBackdrop");
@@ -537,31 +544,175 @@
   healthClose.addEventListener("click", function () { closeModal(healthModal); });
   healthRefresh.addEventListener("click", function () { loadHealth(false); });
 
-  // ---- Browser live view (small browser window inside the chat) ----
-  // Browser steps carry a screenshot URL; show the newest one in the card
-  // at the top of the steps panel. Fetched with the API token (an <img>
-  // tag can't send headers), shown as a blob.
+  // ---- Browser panel (live browser inside the chat, v0.11) ----
+  // The browser runs headless in the background; this card shows it
+  // live. Watch mode: tap the image to enlarge. Control mode (after
+  // "Take control"): clicks/taps on the image, wheel scrolling and the
+  // typing row are forwarded into the page, and the agent waits.
+  // Frames are fetched with the API token (an <img> tag can't send
+  // headers) and shown as blobs. Coordinates map onto the browser's
+  // 1280x800 viewport.
+  var BROWSER_VIEWPORT_W = 1280;
+  var BROWSER_VIEWPORT_H = 800;
+  var browserControlled = false;
+  var browserStateTimer = null;
+  var browserFrameTimer = null;
+  var scrollAccum = 0;
+  var scrollTimer = null;
+
+  function showBrowserFrame(blob) {
+    if (liveShotObjectUrl) URL.revokeObjectURL(liveShotObjectUrl);
+    liveShotObjectUrl = URL.createObjectURL(blob);
+    browserLiveImg.src = liveShotObjectUrl;
+    browserLive.classList.remove("hidden");
+    startBrowserFramePolling();
+  }
+
+  function fetchBrowserFrame(url) {
+    apiFetch(url)
+      .then(function (r) { if (!r.ok) throw new Error("shot"); return r.blob(); })
+      .then(showBrowserFrame)
+      .catch(function () { /* live view is best-effort */ });
+  }
+
+  function refreshBrowserFrame() {
+    fetchBrowserFrame("/browser/shot?t=" + Date.now());
+  }
+
+  // Browser steps carry a screenshot URL; show the newest one.
   function updateBrowserLive(url) {
     if (!url || url === lastShotUrl) return;
     lastShotUrl = url;
-    apiFetch(url)
-      .then(function (r) { if (!r.ok) throw new Error("shot"); return r.blob(); })
-      .then(function (blob) {
-        if (liveShotObjectUrl) URL.revokeObjectURL(liveShotObjectUrl);
-        liveShotObjectUrl = URL.createObjectURL(blob);
-        browserLiveImg.src = liveShotObjectUrl;
-        browserLive.classList.remove("hidden");
-      })
-      .catch(function () { /* live view is best-effort */ });
+    fetchBrowserFrame(url);
   }
-  browserLiveImg.addEventListener("click", function () {
+
+  function startBrowserFramePolling() {
+    if (browserFrameTimer) return;
+    browserFrameTimer = setInterval(function () {
+      if (!browserLive.classList.contains("hidden")) refreshBrowserFrame();
+    }, 700);
+  }
+
+  function stopBrowserFramePolling() {
+    if (browserFrameTimer) clearInterval(browserFrameTimer);
+    browserFrameTimer = null;
+  }
+
+  function applyBrowserState(state) {
+    if (!state || !state.open) {
+      browserLive.classList.add("hidden");
+      stopBrowserFramePolling();
+      browserControlled = false;
+      return;
+    }
+    browserControlled = !!state.user_controlled;
+    browserLive.classList.remove("hidden");
+    browserLive.classList.toggle("controlled", browserControlled);
+    browserLiveUrl.textContent = state.url || "";
+    browserLiveUrl.title = state.url || "";
+    browserLiveStatus.textContent = browserControlled
+      ? "You have control" : "Linda is browsing…";
+    browserControlBtn.textContent = browserControlled
+      ? "Give back to Linda" : "Take control";
+    browserTypeRow.classList.toggle("hidden", !browserControlled);
+    browserLiveImg.title = browserControlled
+      ? "Tap to click in the browser" : "Tap to enlarge";
+    startBrowserFramePolling();
+  }
+
+  function pollBrowserState() {
+    apiFetch("/browser/state")
+      .then(function (r) { if (!r.ok) throw new Error("state"); return r.json(); })
+      .then(applyBrowserState)
+      .catch(function () { /* panel state is best-effort */ });
+  }
+
+  function startBrowserPolling() {
+    if (browserStateTimer) return;
+    pollBrowserState();
+    browserStateTimer = setInterval(pollBrowserState, 1000);
+  }
+
+  function sendBrowserInput(payload) {
+    return apiFetch("/browser/input", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (state) {
+        applyBrowserState(state);
+        refreshBrowserFrame();
+      })
+      .catch(function () { /* input is best-effort; next poll resyncs */ });
+  }
+
+  browserControlBtn.addEventListener("click", function () {
+    apiFetch("/browser/control", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: browserControlled ? "release" : "take" })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (state) {
+        applyBrowserState(state);
+        refreshBrowserFrame();
+        if (state.user_controlled) browserTypeInput.focus();
+      })
+      .catch(function () { showToast("Could not switch browser control.", true); });
+  });
+
+  // Watch mode: tap enlarges. Control mode: tap clicks in the page.
+  browserLiveImg.addEventListener("click", function (e) {
+    if (browserControlled) {
+      e.preventDefault();
+      var rect = browserLiveImg.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var x = (e.clientX - rect.left) * BROWSER_VIEWPORT_W / rect.width;
+      var y = (e.clientY - rect.top) * BROWSER_VIEWPORT_H / rect.height;
+      x = Math.max(0, Math.min(BROWSER_VIEWPORT_W, x));
+      y = Math.max(0, Math.min(BROWSER_VIEWPORT_H, y));
+      sendBrowserInput({ type: "click", x: x, y: y });
+      return;
+    }
     if (!liveShotObjectUrl) return;
     shotLightboxImg.src = liveShotObjectUrl;
     shotLightbox.classList.remove("hidden");
   });
+
+  // Control mode: wheel over the image scrolls the page (debounced).
+  browserLiveImg.addEventListener("wheel", function (e) {
+    if (!browserControlled) return;
+    e.preventDefault();
+    scrollAccum += e.deltaY;
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(function () {
+      var dy = scrollAccum;
+      scrollAccum = 0;
+      scrollTimer = null;
+      if (dy) sendBrowserInput({ type: "scroll", dy: dy });
+    }, 120);
+  }, { passive: false });
+
+  function sendBrowserType() {
+    var text = browserTypeInput.value;
+    if (!text) return;
+    browserTypeInput.value = "";
+    sendBrowserInput({ type: "type", text: text });
+  }
+  browserTypeSend.addEventListener("click", sendBrowserType);
+  browserTypeInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); sendBrowserType(); }
+  });
+  browserKeyEnter.addEventListener("click", function () {
+    sendBrowserInput({ type: "key", key: "Enter" });
+  });
+
   shotLightbox.addEventListener("click", function () {
     shotLightbox.classList.add("hidden");
   });
+
+  startBrowserPolling();
 
   // ---- Steps rendering ----
   function renderSteps(steps) {

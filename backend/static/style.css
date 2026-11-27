@@ -365,6 +365,13 @@ body::after {
   margin: 12px 12px 0; border: 1px solid var(--glass-border);
   border-radius: 14px; background: var(--glass-strong);
   box-shadow: var(--shadow-card); overflow: hidden;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+/* Control mode: accent border + glow so it is obvious who is driving. */
+.browser-live.controlled {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124, 108, 240, 0.35),
+    0 6px 22px rgba(124, 108, 240, 0.28);
 }
 .browser-live-head {
   display: flex; align-items: center; gap: 7px;
@@ -375,12 +382,54 @@ body::after {
   background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
   flex-shrink: 0;
 }
+.browser-live.controlled .browser-live-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 108, 240, 0.22);
+}
 .browser-live-title { flex: 1; }
-.browser-live-hint { font-size: 11px; font-weight: 400; color: var(--muted); }
+.browser-live-status {
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  white-space: nowrap;
+}
+.browser-live.controlled .browser-live-status { color: var(--accent); }
+.browser-live-url {
+  padding: 5px 11px; font-size: 11px; color: var(--muted);
+  background: rgba(255, 255, 255, 0.55);
+  border-top: 1px solid var(--glass-border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .browser-live img {
   display: block; width: 100%; height: auto; cursor: zoom-in;
   border-top: 1px solid var(--glass-border);
+  -webkit-user-select: none; user-select: none;
+  -webkit-user-drag: none;
 }
+.browser-live.controlled img { cursor: pointer; }
+.browser-live-controls { padding: 9px 11px 11px; }
+.btn-control {
+  width: 100%; padding: 9px 14px; border-radius: 11px;
+  background: var(--gradient-accent); color: #fff; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(124, 108, 240, 0.30);
+}
+.browser-live.controlled .btn-control {
+  background: var(--accent-2);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.30);
+}
+.browser-type-row {
+  display: flex; gap: 7px; padding: 0 11px 11px;
+}
+.browser-type-row input {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.94); color: var(--text);
+  font-size: 13px;
+}
+.btn-type-send, .btn-key {
+  padding: 8px 12px; border-radius: 10px; font-weight: 600;
+  background: var(--glass-strong); color: var(--text);
+  border: 1px solid var(--glass-border); box-shadow: var(--shadow-card);
+}
+.btn-type-send { background: var(--gradient-accent); color: #fff; border-color: transparent; }
 .shot-lightbox {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(15, 18, 35, 0.82);

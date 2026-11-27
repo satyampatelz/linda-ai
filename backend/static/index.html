@@ -84,14 +84,25 @@
           <h2>Live steps</h2>
           <button id="stepsClose" class="icon-btn icon-only" aria-label="Close"><svg class="btn-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6.8 6.8 L17.2 17.2 M17.2 6.8 L6.8 17.2" fill="none" stroke="url(#voiceGrad)" stroke-width="2.1" stroke-linecap="round"/></svg></button>
         </div>
-        <!-- Live view of the agent's browser (small window in the chat) -->
+        <!-- Live view of the agent's browser (small window in the chat).
+             v0.11: interactive panel — URL bar, Take control button and
+             a typing row, so the user can drive the browser from here. -->
         <div id="browserLive" class="browser-live hidden">
           <div class="browser-live-head">
             <span class="browser-live-dot" aria-hidden="true"></span>
             <span class="browser-live-title">Browser — live</span>
-            <span class="browser-live-hint">tap to enlarge</span>
+            <span id="browserLiveStatus" class="browser-live-status">Linda is browsing…</span>
           </div>
+          <div id="browserLiveUrl" class="browser-live-url" title=""></div>
           <img id="browserLiveImg" alt="Linda's browser, live" title="Tap to enlarge">
+          <div class="browser-live-controls">
+            <button id="browserControlBtn" class="btn btn-control" type="button">Take control</button>
+          </div>
+          <div id="browserTypeRow" class="browser-type-row hidden">
+            <input id="browserTypeInput" type="text" placeholder="Type into the browser…" autocomplete="off">
+            <button id="browserTypeSend" class="btn btn-type-send" type="button">Send</button>
+            <button id="browserKeyEnter" class="btn btn-key" type="button">Enter</button>
+          </div>
         </div>
         <div id="steps">
           <p class="steps-empty">Your agent's steps will appear here live.</p>
@@ -152,8 +163,8 @@
         <label class="field">
           <span class="field-label">Browser</span>
           <select id="setBrowser">
-            <option value="visible">Visible — you watch Chrome on screen (best for demos)</option>
-            <option value="headless">Headless — runs in the background</option>
+            <option value="headless">Panel — browser inside the chat (default)</option>
+            <option value="visible">Visible window — Chrome opens on screen</option>
           </select>
         </label>
 
