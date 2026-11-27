@@ -475,6 +475,21 @@
       fail: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="#DC2626"/><path d="M8.4 8.4 L15.6 15.6 M15.6 8.4 L8.4 15.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>',
       skip: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="#94A3C8"/><path d="M8 12 h8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>'
     };
+    // Active-brain summary at the top, so the user can tell at a glance
+    // which brain is answering and whether the Gemini key is set.
+    if (data.provider) {
+      var brainName = data.provider === "gemini" ? "Gemini" : "Ollama";
+      var brainLine = "Active brain: " + brainName +
+        (data.model ? " (" + data.model + ")" : "");
+      var keyLine = data.provider === "gemini"
+        ? (data.gemini_key_set ? "Gemini key: set" : "Gemini key: not set")
+        : (data.gemini_key_set ? "Gemini key: set (not active)"
+                                : "Gemini key: not set");
+      html += "<div class='health-row ok'>" +
+        "<div class='health-head'><span class='health-icon'>" +
+        HEALTH_ICONS.ok + "</span>" + escapeHtml(brainLine) + "</div>" +
+        "<div class='health-detail'>" + escapeHtml(keyLine) + "</div></div>";
+    }
     data.checks.forEach(function (c) {
       var icon = HEALTH_ICONS[c.status] || HEALTH_ICONS.skip;
       html += "<div class='health-row " + c.status + "'>" +
