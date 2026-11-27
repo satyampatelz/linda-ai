@@ -744,6 +744,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onSaved: _checkMessagingPending,
             onDismiss: () => _dismissPending(p),
           ),
+        _BrowserPanel(api: widget.api),
         if (_steps.isNotEmpty || running)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
@@ -1374,6 +1375,242 @@ class _Composer extends StatelessWidget {
 /// Screenshot fetches are cached by URL so step cards don't refetch on
 /// every rebuild (the steps sheet rebuilds on each poll).
 final Map<String, Future<Uint8List?>> _shotFutures = {};
+
+/// In-chat browser panel (v0.11) — mirrors the PWA: the agent's browser
+/// lives inside the chat. Watch mode shows the live page; "Take
+/// control" hands it to the user (taps + typing forwarded into the
+/// page, agent waits), "Give back to Linda" returns it. Polls
+/// /browser/state every second and refreshes the frame ~700ms while
+/// open. Coordinates map onto the browser's 1280x800 viewport.
+class _BrowserPanel extends StatefulWidget {
+  const _BrowserPanel({required this.api});
+
+  final ApiClient api;
+
+  @override
+  State<_BrowserPanel> createState() => _BrowserPanelState();
+}
+
+class _BrowserPanelState extends State<_BrowserPanel> {
+  static const double _viewportW = 1280;
+  static const double _viewportH = 800;
+
+  BrowserState? _state;
+  Uint8List? _frame;
+  Timer? _stateTimer;
+  Timer? _frameTimer;
+  final TextEditingController _typeController = TextEditingController();
+
+  bool get _controlled => _state?.userControlled ?? false;
+  bool get _open => _state?.open ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_pollState());
+    _stateTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => unawaited(_pollState()),
+    );
+    _frameTimer = Timer.periodic(
+      const Duration(milliseconds: 700),
+      (_) {
+        if (_open) unawaited(_fetchFrame());
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _stateTimer?.cancel();
+    _frameTimer?.cancel();
+    _typeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pollState() async {
+    final s = await widget.api.browserState();
+    if (!mounted || s == null) return;
+    setState(() => _state = s);
+    if (s.open && _frame == null) unawaited(_fetchFrame());
+  }
+
+  Future<void> _fetchFrame() async {
+    final bytes = await widget.api
+        .fetchShot('/browser/shot?t=${DateTime.now().millisecondsSinceEpoch}');
+    if (!mounted || bytes == null) return;
+    setState(() => _frame = bytes);
+  }
+
+  void _applyState(BrowserState? s) {
+    if (!mounted || s == null) return;
+    setState(() => _state = s);
+    unawaited(_fetchFrame());
+  }
+
+  Future<void> _toggleControl() async {
+    final s = await widget.api.browserControl(_controlled ? 'release' : 'take');
+    _applyState(s);
+  }
+
+  Future<void> _sendInput(Map<String, dynamic> input) async {
+    final s = await widget.api.browserInput(input);
+    _applyState(s);
+  }
+
+  void _onTap(TapDownDetails details, Size size) {
+    if (!_controlled || size.width == 0 || size.height == 0) return;
+    final x = (details.localPosition.dx / size.width * _viewportW)
+        .clamp(0.0, _viewportW);
+    final y = (details.localPosition.dy / size.height * _viewportH)
+        .clamp(0.0, _viewportH);
+    unawaited(_sendInput({'type': 'click', 'x': x, 'y': y}));
+  }
+
+  void _sendType() {
+    final text = _typeController.text;
+    if (text.isEmpty) return;
+    _typeController.clear();
+    unawaited(_sendInput({'type': 'type', 'text': text}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = _state;
+    if (state == null || !state.open) return const SizedBox.shrink();
+    final controlled = state.userControlled;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      decoration: BoxDecoration(
+        color: LindaTheme.glassStrong,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: controlled ? LindaTheme.accent : Colors.white,
+          width: controlled ? 1.5 : 0.75,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: controlled
+                ? LindaTheme.accent.withValues(alpha: 0.35)
+                : const Color(0x235A6EA0),
+            blurRadius: controlled ? 16 : 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(11, 8, 11, 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: controlled
+                        ? LindaTheme.accent
+                        : const Color(0xFF22C55E),
+                  ),
+                ),
+                const SizedBox(width: 7),
+                const Expanded(
+                  child: Text(
+                    'Browser — live',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  controlled ? 'You have control' : 'Linda is browsing…',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: controlled ? LindaTheme.accent : LindaTheme.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+            decoration: const BoxDecoration(
+              color: Color(0x8CFFFFFF),
+              border: Border(top: BorderSide(color: Colors.white, width: 0.75)),
+            ),
+            child: Text(
+              state.url,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: LindaTheme.muted),
+            ),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              final h = w * _viewportH / _viewportW;
+              return GestureDetector(
+                onTapDown: (d) => _onTap(d, Size(w, h)),
+                child: SizedBox(
+                  width: w,
+                  height: h,
+                  child: _frame == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : Image.memory(_frame!, fit: BoxFit.fill),
+                ),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(11, 9, 11, 11),
+            child: FilledButton(
+              onPressed: () => unawaited(_toggleControl()),
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    controlled ? LindaTheme.green : LindaTheme.accent,
+              ),
+              child: Text(controlled ? 'Give back to Linda' : 'Take control'),
+            ),
+          ),
+          if (controlled)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(11, 0, 11, 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _typeController,
+                      decoration: const InputDecoration(
+                        hintText: 'Type into the browser…',
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _sendType(),
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  FilledButton(
+                    onPressed: _sendType,
+                    child: const Text('Send'),
+                  ),
+                  const SizedBox(width: 7),
+                  OutlinedButton(
+                    onPressed: () => unawaited(
+                      _sendInput({'type': 'key', 'key': 'Enter'}),
+                    ),
+                    child: const Text('Enter'),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
 class _StepCard extends StatelessWidget {
   const _StepCard({required this.step, required this.api});
